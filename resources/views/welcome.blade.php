@@ -15,7 +15,6 @@
     <!-- Tailwind CSS (Vite) -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     
-    <!-- Temporary Tailwind Script for precise color fallback, though Vite app.css will take over -->
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <script>
         tailwind.config = {
@@ -24,196 +23,199 @@
                 extend: {
                     colors: {
                         "primary": "#2563EB",
-                        "amber-accent": "#f59e0b",
-                        "background-light": "#F8FAFC",
-                        "surface": {
-                            "light": "#FFFFFF"
-                        }
+                        "hero-bg": "#F8F9FA",
+                        "dark-footer": "#0F172A",
                     },
                     fontFamily: {
                         "sans": ["Plus Jakarta Sans", "sans-serif"],
-                        "display": ["Plus Jakarta Sans", "sans-serif"]
-                    },
-                    borderRadius: {
-                        "DEFAULT": "1.5rem",
-                        "lg": "1.5rem",
-                        "xl": "1.5rem",
-                        "full": "9999px"
                     },
                 },
             },
         }
     </script>
     <style>
-        body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-        }
-        .hide-scrollbar::-webkit-scrollbar {
-            display: none;
-        }
-        .hide-scrollbar {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
-        .fab-container:hover .fab-tooltip {
-            opacity: 1;
-            transform: translateX(-110%) translateY(-50%);
-        }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .fab-container:hover .fab-tooltip { opacity: 1; transform: translateX(-110%) translateY(-50%); }
     </style>
 </head>
-<body class="bg-background-light text-slate-900 min-h-screen" x-data="{ chatbotOpen: false }">
+<body class="bg-[#F4F6F9] min-h-screen text-slate-900" x-data="{ chatbotOpen: false }">
 
     <!-- Navigasi Atas -->
-    <header class="sticky top-0 z-50 w-full border-b border-slate-200 bg-white/80 backdrop-blur-md">
-        <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between gap-8">
-            <!-- Logo -->
-            <a href="/" class="flex items-center gap-2 shrink-0">
-                <div class="size-10 bg-primary rounded-xl flex items-center justify-center text-white">
-                    <span class="material-symbols-outlined text-2xl">confirmation_number</span>
-                </div>
-                <h1 class="text-2xl font-extrabold tracking-tight text-slate-900">Evoria</h1>
-            </a>
+    <header class="bg-white border-b border-gray-200">
+        <div class="max-w-[1400px] mx-auto px-6 h-[80px] flex items-center justify-between gap-6">
             
-            <!-- Link Navigasi -->
-            <nav class="hidden lg:flex items-center gap-8">
-                @foreach($categories->take(4) as $cat)
-                    <a class="text-sm font-semibold hover:text-primary transition-colors" href="#">{{ $cat->name }}</a>
-                @endforeach
-            </nav>
-            
-            <!-- Bar Pencarian -->
-            <div class="flex-1 max-w-md hidden md:block">
-                <form action="/" method="GET" class="relative group">
-                    <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors">search</span>
-                    <input name="search" class="w-full h-12 pl-12 pr-4 bg-slate-100 border-none rounded-full focus:ring-2 focus:ring-primary/50 text-sm placeholder:text-slate-500" placeholder="Cari event, artis, atau lokasi..." type="text"/>
-                </form>
+            <div class="flex items-center gap-8">
+                <!-- Logo -->
+                <a href="/" class="flex items-center gap-1 shrink-0">
+                    <h1 class="text-[28px] font-black tracking-tight text-slate-900 flex items-center">
+                        EV<span class="material-symbols-outlined text-[20px] mx-[2px] mt-1 font-bold">trip_origin</span>RIA
+                    </h1>
+                </a>
+                
+                <!-- Links -->
+                <nav class="hidden lg:flex items-center gap-6">
+                    <a class="text-[14px] font-bold text-slate-900 hover:text-primary transition-colors" href="#">Beli Tiket</a>
+                    <a class="text-[14px] font-bold text-slate-900 hover:text-primary transition-colors" href="#">Sponsor</a>
+                    <a class="text-[14px] font-bold text-slate-900 hover:text-primary transition-colors" href="#">Bantuan</a>
+                </nav>
             </div>
             
-            <!-- Aksi -->
+            <!-- Search -->
+            <div class="flex-1 max-w-[500px] hidden md:block">
+                <div class="relative">
+                    <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-[20px]">search</span>
+                    <input class="w-full h-[44px] pl-11 pr-4 bg-[#F1F3F5] border-none rounded-lg text-[13px] placeholder:text-slate-400 focus:ring-1 focus:ring-primary focus:bg-white transition-colors" placeholder="Cari event, artis, atau lokasi..." type="text"/>
+                </div>
+            </div>
+            
+            <!-- Actions -->
             <div class="flex items-center gap-4">
+                <a href="#" class="hidden sm:flex items-center gap-2 text-[14px] font-bold text-slate-900 hover:text-primary">
+                    <span class="material-symbols-outlined rounded-md bg-white text-[22px]">calendar_add_on</span>
+                    Buat Event
+                </a>
+                
                 @if (Route::has('login'))
                     @auth
-                        @if(Auth::user()->role === 'organizer')
-                            <a href="{{ route('organizer.events.create') }}" class="hidden sm:flex items-center gap-2 px-5 py-2.5 bg-primary text-white text-sm font-bold rounded-full hover:bg-primary/90 transition-all shadow-lg shadow-primary/20">
-                                <span class="material-symbols-outlined text-sm">add</span>
-                                <span>Buat Event</span>
-                            </a>
-                        @endif
-                        <a href="{{ url('/dashboard') }}" class="flex items-center gap-2">
-                            <div class="size-11 rounded-full bg-slate-200 overflow-hidden border-2 border-primary/20 hover:border-primary transition duration-300">
-                                <img alt="User profile avatar" class="w-full h-full object-cover" src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=2563EB&color=fff"/>
-                            </div>
-                        </a>
+                        <a href="{{ url('/dashboard') }}" class="px-6 py-[10px] text-[14px] font-bold border border-primary text-primary rounded-lg hover:bg-primary/5 transition-colors">Dashboard</a>
                     @else
-                        <a href="{{ route('login') }}" class="text-sm font-bold text-slate-600 hover:text-primary transition-colors">Log in</a>
-                        @if (Route::has('register'))
-                            <a href="{{ route('register') }}" class="px-5 py-2.5 bg-primary text-white text-sm font-bold rounded-full hover:bg-primary/90 transition-all shadow-lg shadow-primary/20">Masuk / Daftar</a>
-                        @endif
+                        <div class="flex items-center gap-3 border-l border-slate-200 pl-4 ml-2">
+                            <a href="{{ route('register') }}" class="px-6 py-[10px] text-[14px] font-bold border border-primary text-primary rounded-lg hover:bg-primary/5 transition-colors">Daftar</a>
+                            <a href="{{ route('login') }}" class="px-6 py-[10px] bg-primary text-white text-[14px] font-bold rounded-lg hover:bg-primary/90 transition-all shadow-sm">Masuk</a>
+                        </div>
                     @endauth
                 @endif
             </div>
         </div>
     </header>
 
-    <main class="max-w-7xl mx-auto px-6 py-8 space-y-12">
-        <!-- Hero Carousel -->
-        <section class="relative rounded-[24px] overflow-hidden aspect-[21/9] bg-slate-800 group">
-            <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('https://images.unsplash.com/photo-1470229722913-7c092b122fba?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80')">
-                <div class="absolute inset-0 bg-gradient-to-r from-slate-900/90 via-slate-900/50 to-transparent"></div>
-            </div>
-            <div class="relative h-full flex flex-col justify-center px-12 max-w-2xl">
-                <span class="inline-flex items-center gap-2 px-3 py-1 bg-primary/20 backdrop-blur-md text-primary text-xs font-bold uppercase tracking-wider rounded-full mb-6 w-fit border border-primary/30">
-                    <span class="size-2 bg-primary rounded-full animate-pulse"></span>
-                    Event Pilihan Teratas
-                </span>
-                <h2 class="text-4xl md:text-5xl font-extrabold text-white leading-tight mb-4">Temukan Pengalaman Luar Biasa</h2>
-                <p class="text-lg text-slate-300 mb-8 line-clamp-2">Dari konser berskala besar hingga workshop eksklusif, dapatkan tiket Anda melalui Evoria dengan aman dan cepat.</p>
-                <div class="flex items-center gap-4">
-                    <a href="#events" class="px-8 py-4 bg-primary text-white font-bold rounded-full hover:scale-105 transition-transform shadow-lg shadow-primary/30">
-                        Eksplorasi Sekarang
-                    </a>
-                </div>
-            </div>
-        </section>
-
-        <!-- Kategori -->
-        <section class="flex flex-col gap-4">
-            <h3 class="text-xl font-extrabold text-slate-900">Telusuri Kategori</h3>
-            <div class="flex items-center gap-3 overflow-x-auto hide-scrollbar pb-2">
-                <a href="/" class="px-6 py-3 bg-primary text-white rounded-full font-semibold flex items-center gap-2 shrink-0 shadow-sm border border-transparent">
-                    <span class="material-symbols-outlined text-lg">explore</span> Semua Event
-                </a>
-                @foreach($categories as $category)
-                    <a href="/?category_id={{ $category->id }}" class="px-6 py-3 bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:border-slate-300 rounded-full font-semibold flex items-center gap-2 shrink-0 transition-all shadow-sm">
-                        <span class="material-symbols-outlined text-lg">{{ $category->id % 2 == 0 ? 'music_note' : 'festival' }}</span> {{ $category->name }}
-                    </a>
-                @endforeach
-            </div>
-        </section>
-
-        <!-- Event Mendatang -->
-        <section class="space-y-6" id="events">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h3 class="text-2xl font-extrabold text-slate-900">Event Mendatang</h3>
-                    <p class="text-slate-500 text-sm mt-1">Jangan sampai kehabisan tiket untuk acara-acara seru ini!</p>
-                </div>
-            </div>
+    <main class="max-w-[1200px] mx-auto px-6 py-10 space-y-12">
+        
+        <!-- Hero Section -->
+        <section>
+            @php
+                $featuredEvent = isset($events) && count($events) > 0 ? $events->first() : null;
+            @endphp
             
-            @if($events->count() > 0)
+            @if($featuredEvent)
+                <div class="relative rounded-[20px] overflow-hidden bg-white shadow-sm h-[320px] group cursor-pointer block">
+                    <img src="{{ $featuredEvent->banner_path ? asset('storage/' . $featuredEvent->banner_path) : 'https://images.unsplash.com/photo-1470229722913-7c092b122fba?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80' }}" class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
+                    <div class="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/40 to-transparent"></div>
+                    <div class="absolute bottom-0 left-0 p-8 w-full z-10 flex flex-col">
+                        <span class="px-3 py-1 bg-primary/80 backdrop-blur text-white text-[10px] font-bold uppercase tracking-wider rounded-md mb-3 w-fit">Event Unggulan</span>
+                        <h2 class="text-[32px] md:text-[40px] font-black text-white leading-tight mb-2">{{ $featuredEvent->title }}</h2>
+                        <div class="flex items-center gap-4 text-slate-100 text-[14px] font-medium">
+                            <span class="flex items-center gap-1.5"><span class="material-symbols-outlined text-[16px]">location_on</span> {{ $featuredEvent->location_name }}</span>
+                            <span class="flex items-center gap-1.5"><span class="material-symbols-outlined text-[16px]">calendar_today</span> {{ \Carbon\Carbon::parse($featuredEvent->start_time)->translatedFormat('d M Y') }}</span>
+                        </div>
+                    </div>
+                </div>
+            @else
+                <div class="bg-white rounded-[16px] h-[320px] flex items-center justify-center shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
+                    <p class="text-[24px] italic font-medium text-slate-800">Event unggulan yang sedang berlansung</p>
+                </div>
+            @endif
+        </section>
+
+        <!-- Featured Events -->
+        <section>
+            <h2 class="text-[28px] font-bold text-black mb-6 tracking-tight">Featured Events</h2>
+            
+            @if(isset($events) && count($events) > 0)
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     @foreach($events as $event)
-                        <a href="{{ route('events.show', $event->slug) }}" class="flex flex-col gap-4 group cursor-pointer">
-                            <div class="aspect-[4/3] rounded-[24px] overflow-hidden relative bg-slate-200 shadow-sm">
-                                @if($event->banner_path)
-                                    <img alt="{{ $event->title }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" src="{{ asset('storage/' . $event->banner_path) }}"/>
-                                @else
-                                    <img alt="Placeholder" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" src="https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"/>
-                                @endif
-                                
-                                <div class="absolute top-4 left-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-xs font-bold text-slate-800 shadow-sm">
-                                    {{ $event->category->name }}
-                                </div>
+                        <a href="{{ route('events.show', $event->slug ?? $event->id) }}" class="bg-white rounded-[16px] border border-slate-100 overflow-hidden shadow-sm hover:shadow-md transition-shadow group flex flex-col">
+                            <div class="relative h-40 overflow-hidden bg-slate-200">
+                                <img src="{{ $event->banner_path ? asset('storage/' . $event->banner_path) : 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80' }}" alt="{{ $event->title }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
                             </div>
-                            <div>
-                                <h4 class="text-lg font-bold text-slate-900 mb-1 leading-tight group-hover:text-primary transition-colors line-clamp-2" title="{{ $event->title }}">{{ $event->title }}</h4>
-                                <div class="flex flex-col gap-1 text-slate-500 text-sm mb-3">
-                                    <div class="flex items-center gap-1.5 line-clamp-1">
-                                        <span class="material-symbols-outlined text-[16px] text-primary">calendar_today</span>
-                                        <span>{{ \Carbon\Carbon::parse($event->start_time)->translatedFormat('D, d M Y | H:i') }}</span>
-                                    </div>
-                                    <div class="flex items-center gap-1.5 line-clamp-1 truncate" title="{{ $event->location_name }}">
-                                        <span class="material-symbols-outlined text-[16px] text-primary">location_on</span>
-                                        <span>{{ $event->location_name }}</span>
-                                    </div>
-                                </div>
-                                
-                                @php
-                                    $minPrice = $event->tickets->min('price');
-                                @endphp
-                                <p class="text-sm font-extrabold {{ $minPrice > 0 ? 'text-amber-accent' : 'text-emerald-500' }} mt-1 border-t border-slate-100 pt-3">
-                                    {{ $minPrice > 0 ? 'Mulai Rp ' . number_format($minPrice, 0, ',', '.') : 'Gratis Masuk' }}
+                            <div class="p-4 flex-1 flex flex-col">
+                                <h3 class="font-bold text-[15px] text-slate-900 line-clamp-2 leading-tight group-hover:text-primary transition-colors">{{ $event->title }}</h3>
+                                <p class="text-[13px] font-medium text-slate-500 mt-2 flex items-center gap-1.5 line-clamp-1">
+                                    <span class="material-symbols-outlined text-[16px]">calendar_today</span>
+                                    {{ \Carbon\Carbon::parse($event->start_time)->translatedFormat('d M Y') }}
                                 </p>
+                                <div class="mt-auto pt-4 flex items-center justify-between border-t border-slate-100">
+                                    @php
+                                        $minPrice = $event->tickets && $event->tickets->count() > 0 ? $event->tickets->min('price') : 0;
+                                    @endphp
+                                    <p class="text-[15px] font-black {{ $minPrice > 0 ? 'text-slate-900' : 'text-primary' }}">
+                                        {{ $minPrice > 0 ? 'Rp ' . number_format($minPrice, 0, ',', '.') : 'Gratis' }}
+                                    </p>
+                                </div>
                             </div>
                         </a>
                     @endforeach
                 </div>
-                
-                <!-- Pagination (if applicable) -->
-                @if(method_exists($events, 'links'))
-                <div class="flex justify-center pt-8">
-                    {{ $events->links() }}
-                </div>
-                @endif
             @else
-                <div class="py-20 text-center border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50">
-                    <span class="material-symbols-outlined text-5xl text-slate-300 mb-3 block">confirmation_number</span>
-                    <h3 class="text-xl font-bold text-slate-700 mb-1">Belum ada event ditemukan</h3>
-                    <p class="text-slate-500 text-sm">Coba ubah kata kunci pencarian atau kategori Anda.</p>
+                <div class="bg-white rounded-[16px] h-[320px] flex items-center justify-center shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
+                    <p class="text-[24px] italic font-medium text-slate-800">Belum ada event untuk saat ini</p>
                 </div>
             @endif
         </section>
+
+        <!-- Kategori Event -->
+        <section>
+            <h2 class="text-[28px] font-bold text-black mb-6 tracking-tight">Kategori Event</h2>
+            
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-4">
+                @php
+                    $categoriesDisplay = [
+                        ['name' => 'Konser', 'icon' => 'local_activity'],
+                        ['name' => 'Festival & Pameran', 'icon' => 'celebration'],
+                        ['name' => 'Workshop', 'icon' => 'build'],
+                        ['name' => 'Seminar', 'icon' => 'campaign'],
+                        ['name' => 'Pertunjukan & Penampilan', 'icon' => 'hourglass_empty'],
+                        ['name' => 'Tur & Perjalanan', 'icon' => 'luggage'],
+                        ['name' => 'Social Gethering', 'icon' => 'groups']
+                    ];
+                @endphp
+
+                @foreach($categoriesDisplay as $cat)
+                    <div class="bg-white border border-slate-200 rounded-[16px] py-6 px-2 flex flex-col items-center justify-center gap-3 cursor-pointer hover:border-slate-300 hover:shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-primary">
+                        <!-- We use material symbols as simple placeholders since exact custom icons aren't available, or simple SVG -->
+                        <span class="material-symbols-outlined text-[42px] text-slate-800 font-light">{{ $cat['icon'] }}</span>
+                        <p class="text-[13px] font-bold text-slate-800 text-center leading-tight max-w-[100px]">{{ $cat['name'] }}</p>
+                    </div>
+                @endforeach
+            </div>
+        </section>
+
     </main>
+
+    <!-- Footer -->
+    <footer class="bg-[#111827] mt-20 text-white">
+        <div class="max-w-[1200px] mx-auto px-6 py-10 flex flex-col md:flex-row justify-between items-center gap-6">
+            <div class="flex items-center gap-8">
+                <a href="#" class="text-[14px] font-bold hover:text-slate-300 transition-colors">About Us</a>
+                <a href="#" class="text-[14px] font-bold hover:text-slate-300 transition-colors">Carrer</a>
+                <a href="#" class="text-[14px] font-bold hover:text-slate-300 transition-colors">FAQ</a>
+                <a href="#" class="text-[14px] font-bold hover:text-slate-300 transition-colors">Contact</a>
+            </div>
+            
+            <div>
+                <h2 class="text-[28px] font-black tracking-widest flex items-center">
+                    EV<span class="material-symbols-outlined text-[20px] mx-[2px] mt-1 font-bold">trip_origin</span>RIA
+                </h2>
+            </div>
+            
+            <div class="flex items-center gap-4">
+                <a href="#" class="w-8 h-8 rounded-full border border-white/30 flex items-center justify-center hover:border-white transition-colors">
+                    <span class="material-symbols-outlined text-[16px]">play_arrow</span>
+                </a>
+                <a href="#" class="w-8 h-8 rounded-full border border-white/30 flex items-center justify-center hover:border-white transition-colors text-[14px] font-bold">
+                    X
+                </a>
+                <a href="#" class="w-8 h-8 rounded-full border border-white/30 flex items-center justify-center hover:border-white transition-colors">
+                    <span class="material-symbols-outlined text-[16px]">photo_camera</span>
+                </a>
+                <a href="#" class="w-8 h-8 rounded-full border border-white/30 flex items-center justify-center hover:border-white transition-colors">
+                    <span class="material-symbols-outlined text-[16px]">music_note</span>
+                </a>
+            </div>
+        </div>
+    </footer>
 
     <!-- Chatbot FAB -->
     <div class="fixed bottom-8 right-8 z-[60] fab-container">
@@ -290,50 +292,6 @@
             </form>
         </div>
     </div>
-
-    <!-- Footer -->
-    <footer class="bg-white border-t border-slate-200 py-16 mt-16">
-        <div class="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-12">
-            <div class="col-span-1 md:col-span-1">
-                <div class="flex items-center gap-2 mb-6">
-                    <div class="size-8 bg-primary rounded-lg flex items-center justify-center text-white">
-                        <span class="material-symbols-outlined text-xl">confirmation_number</span>
-                    </div>
-                    <h1 class="text-xl font-extrabold tracking-tight text-slate-900">Evoria</h1>
-                </div>
-                <p class="text-slate-500 text-sm leading-relaxed">
-                    Evoria adalah pasar global terkemuka untuk pengalaman langsung yang luar biasa. Temukan dan pesan tiket konser, festival, dan workshop terbaik.
-                </p>
-            </div>
-            <div>
-                <h5 class="font-bold mb-6 text-slate-900">Tautan Cepat</h5>
-                <ul class="space-y-4 text-sm text-slate-500">
-                    <li><a class="hover:text-primary transition-colors" href="#">Cari Event</a></li>
-                    <li><a class="hover:text-primary transition-colors" href="#">Buat Event</a></li>
-                </ul>
-            </div>
-            <div>
-                <h5 class="font-bold mb-6 text-slate-900">Dukungan</h5>
-                <ul class="space-y-4 text-sm text-slate-500">
-                    <li><a class="hover:text-primary transition-colors" href="#">Pusat Bantuan</a></li>
-                    <li><a class="hover:text-primary transition-colors" href="#">Hubungi Kami</a></li>
-                </ul>
-            </div>
-            <div>
-                <h5 class="font-bold mb-6 text-slate-900">Berlangganan</h5>
-                <p class="text-sm text-slate-500 mb-4">Dapatkan info konser terbaru setiap minggunya.</p>
-                <div class="flex gap-2">
-                    <input class="flex-1 h-11 px-4 bg-slate-100 border-none rounded-full text-sm" placeholder="Email Anda..." type="email"/>
-                    <button class="size-11 bg-primary text-white rounded-full flex items-center justify-center hover:bg-primary/90 transition-colors">
-                        <span class="material-symbols-outlined text-sm">arrow_forward</span>
-                    </button>
-                </div>
-            </div>
-        </div>
-        <div class="max-w-7xl mx-auto px-6 pt-8 mt-12 border-t border-slate-200 flex flex-col md:flex-row justify-between items-center gap-4">
-            <p class="text-sm text-slate-500">© 2026 Evoria Inc. Hak cipta dilindungi.</p>
-        </div>
-    </footer>
 
     <!-- Chatbot Logic -->
     <script>
