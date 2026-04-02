@@ -49,9 +49,7 @@
             <div class="flex items-center gap-8">
                 <!-- Logo -->
                 <a href="/" class="flex items-center gap-1 shrink-0">
-                    <h1 class="text-[28px] font-black tracking-tight text-slate-900 flex items-center">
-                        EV<span class="material-symbols-outlined text-[20px] mx-[2px] mt-1 font-bold">trip_origin</span>RIA
-                    </h1>
+                    <x-application-logo class="h-10 w-auto" />
                 </a>
                 
                 <!-- Links -->
@@ -173,10 +171,10 @@
                 @endphp
 
                 @foreach($categoriesDisplay as $cat)
-                    <div class="bg-white border border-slate-200 rounded-[16px] py-6 px-2 flex flex-col items-center justify-center gap-3 cursor-pointer hover:border-slate-300 hover:shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-primary">
+                    <div class="bg-white border border-slate-200 rounded-[16px] py-6 px-2 flex flex-col items-center justify-center gap-3 cursor-pointer hover:border-primary hover:shadow-md transition-all focus:outline-none focus:ring-2 focus:ring-primary group">
                         <!-- We use material symbols as simple placeholders since exact custom icons aren't available, or simple SVG -->
-                        <span class="material-symbols-outlined text-[42px] text-slate-800 font-light">{{ $cat['icon'] }}</span>
-                        <p class="text-[13px] font-bold text-slate-800 text-center leading-tight max-w-[100px]">{{ $cat['name'] }}</p>
+                        <span class="material-symbols-outlined text-[42px] text-slate-800 font-light group-hover:text-primary transition-colors">{{ $cat['icon'] }}</span>
+                        <p class="text-[13px] font-bold text-slate-800 text-center leading-tight max-w-[100px] group-hover:text-primary transition-colors">{{ $cat['name'] }}</p>
                     </div>
                 @endforeach
             </div>
@@ -195,9 +193,7 @@
             </div>
             
             <div>
-                <h2 class="text-[28px] font-black tracking-widest flex items-center">
-                    EV<span class="material-symbols-outlined text-[20px] mx-[2px] mt-1 font-bold">trip_origin</span>RIA
-                </h2>
+                <x-application-logo class="h-10 w-auto" />
             </div>
             
             <div class="flex items-center gap-4">
