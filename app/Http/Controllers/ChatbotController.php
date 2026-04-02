@@ -17,39 +17,119 @@ class ChatbotController extends Controller
             ]);
         }
 
-        // Fetch published events to inject as context, including tickets for prices
-        $events = \App\Models\Event::with(['category', 'tickets'])->where('status', 'published')->get(['id', 'title', 'start_time', 'location_name', 'description', 'category_id', 'slug']);
+        // STEP 1: Ask OpenAI to extract search filters from the user's prompt
+        $currentDate = now()->format('Y-m-d H:i:s');
+        $filterPrompt = "You are an AI assistant helping to build a database query for an event ticketing app called 'Evoria'.
+        Extract the search criteria from the user's prompt and return ONLY a valid JSON object. Do not include markdown formatting or extra text.
         
-        $appUrl = url('/event/');
+        Today's Date and Time Context: {$currentDate}
         
-        $systemPrompt = "You are a helpful and friendly customer service assistant for 'Evoria', an event ticketing platform. You help attendees find events based on their criteria. 
-        Here is the current list of published events in the database in JSON format. 
-        ONLY recommend events from this list. If the user asks for something not in the list, tell them there are no matches. Do not invent events.
+        JSON Structure needed:
+        {
+            \"keyword\": \"(string) ONLY extract specific proper nouns, artists, event names, or specific locations. IGNORE generic conversational words like 'event', 'acara', 'konser', 'cari', 'dong', 'saya', 'mau'. Return null if no specific keyword.\",
+            \"max_price\": \"(number) maximum ticket price mentioned (e.g., 0 for free/gratis, 100000), or null if none\",
+            \"month\": \"(integer) 1-12 if a specific month is mentioned (e.g. 'september' -> 9), or null\",
+            \"year\": \"(integer) e.g. " . now()->format('Y') . " if mentioned or implied by the month, or null\",
+            \"category\": \"(string) category name if mentioned (e.g. 'konser', 'workshop', 'festival', 'conference'), or null\"
+        }
         
-        CRITICAL INSTRUCTIONS:
-        1. When recommending an event, ALWAYS mention its ticket prices (based on the 'tickets' array in the JSON). If price is 0, it means it's FREE.
-        2. When recommending an event, ALWAYS provide a clickable link to it using this Markdown format: [Event Title]({$appUrl}/slug-of-the-event)
-        3. Keep your answers concise but helpful. Use Markdown formatting for lists and bold text where appropriate.
+        Example Input: 'saya mau event workshop'
+        Example Output: {\"keyword\": null, \"max_price\": null, \"month\": null, \"year\": null, \"category\": \"workshop\"}
 
-        Events List: \n" . json_encode($events);
+        Example Input: 'cari konser tulus di jakarta barat bulan september gratis'
+        Example Output: {\"keyword\": \"tulus jakarta barat\", \"max_price\": 0, \"month\": 9, \"year\": " . now()->format('Y') . ", \"category\": \"konser\"}
+        
+        User Prompt: '{$request->prompt}'";
 
         try {
-            $response = \Illuminate\Support\Facades\Http::withToken($apiKey)->post('https://api.openai.com/v1/chat/completions', [
+            $filterResponse = \Illuminate\Support\Facades\Http::withToken($apiKey)->post('https://api.openai.com/v1/chat/completions', [
+                'model' => 'gpt-4o-mini', // Use faster/cheaper model for simple text extraction
+                'messages' => [['role' => 'user', 'content' => $filterPrompt]],
+                'temperature' => 0.1
+            ]);
+
+            if (!$filterResponse->successful()) {
+                throw new \Exception("Step 1 (Extraction) failed.");
+            }
+
+            // Clean the response slightly in case the AI wraps it in markdown blocks
+            $jsonString = $filterResponse->json()['choices'][0]['message']['content'];
+            $jsonString = str_replace(['```json', '```'], '', $jsonString);
+            $filters = json_decode(trim($jsonString), true);
+
+            // STEP 2: Query the database with the extracted filters (Max 10 results to save tokens)
+            $query = \App\Models\Event::with(['category', 'tickets'])->where('status', 'published');
+
+            if (isset($filters['keyword']) && $filters['keyword']) {
+                $keywordChunks = explode(' ', $filters['keyword']);
+                foreach($keywordChunks as $chunk) {
+                    if (strlen($chunk) > 2) { // avoid matching 'di', 'ke', etc too broadly
+                        $query->where(function($q) use ($chunk) {
+                            $q->where('title', 'like', "%{$chunk}%")
+                              ->orWhere('description', 'like', "%{$chunk}%")
+                              ->orWhere('location_name', 'like', "%{$chunk}%");
+                        });
+                    }
+                }
+            }
+            
+            if (isset($filters['month']) && $filters['month']) {
+                $query->whereMonth('start_time', $filters['month']);
+            }
+            if (isset($filters['year']) && $filters['year']) {
+                $query->whereYear('start_time', $filters['year']);
+            }
+            if (isset($filters['category']) && $filters['category']) {
+                $query->whereHas('category', function($q) use ($filters) {
+                    $q->where('name', 'like', "%{$filters['category']}%");
+                });
+            }
+
+            $events = $query->take(10)->get(['id', 'title', 'start_time', 'location_name', 'description', 'category_id', 'slug']);
+            
+            // Further filter by price locally if requested
+            if (isset($filters['max_price']) && $filters['max_price'] !== null) {
+                $maxPrice = (float) $filters['max_price'];
+                $events = $events->filter(function($event) use ($maxPrice) {
+                    if ($event->tickets->isEmpty()) {
+                        return $maxPrice >= 0;
+                    }
+                    // Check if any ticket tier matches the max price condition
+                    foreach ($event->tickets as $ticket) {
+                        if ((float)$ticket->price <= $maxPrice) return true;
+                    }
+                    return false;
+                });
+            }
+
+            // STEP 3: Context Injection using ONLY the filtered results
+            $appUrl = url('/event/');
+            $systemPrompt = "You are a helpful and friendly customer service assistant for 'Evoria', an event marketplace.
+            Here is a highly filtered list of currently published events matching the user's intent. Do NOT invent events.
+            If the list is empty `[]`, apologize and say no matching events are available right now.
+            
+            CRITICAL INSTRUCTIONS:
+            1. Mention ticket prices (from 'tickets' array). If price is 0, it means it's FREE.
+            2. ALWAYS provide a clickable link using Markdown format: [Event Title]({$appUrl}/slug-of-the-event)
+            3. Keep answers concise, use Markdown formatting for lists and bold text.
+
+            Filtered Events List: \n" . json_encode($events->values()->all());
+
+            $finalResponse = \Illuminate\Support\Facades\Http::withToken($apiKey)->post('https://api.openai.com/v1/chat/completions', [
                 'model' => 'gpt-4o',
                 'messages' => [
                     ['role' => 'system', 'content' => $systemPrompt],
                     ['role' => 'user', 'content' => $request->prompt]
                 ],
-                'max_tokens' => 150,
+                'max_tokens' => 200,
                 'temperature' => 0.5
             ]);
 
-            if ($response->successful()) {
-                $reply = $response->json()['choices'][0]['message']['content'];
+            if ($finalResponse->successful()) {
+                $reply = $finalResponse->json()['choices'][0]['message']['content'];
                 
-                // Keep a log
                 \App\Models\ChatbotLog::create([
-                    'user_id' => $request->user()->id,
+                    'user_id' => $request->user() ? $request->user()->id : null,
                     'prompt' => $request->prompt,
                     'response' => $reply
                 ]);
@@ -60,7 +140,7 @@ class ChatbotController extends Controller
             return response()->json(['response' => "Sorry, the AI service returned an error. Try again later."]);
 
         } catch (\Exception $e) {
-            return response()->json(['response' => "An error occurred while connecting to my brain. Details: " . $e->getMessage()]);
+            return response()->json(['response' => "An error occurred while analyzing the database. Details: " . $e->getMessage()]);
         }
     }
 }
