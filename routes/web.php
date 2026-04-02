@@ -16,6 +16,7 @@ Route::get('/event/{slug}', function ($slug) {
     $event = \App\Models\Event::with('tickets', 'organizer')->where('slug', $slug)->firstOrFail();
     return view('events.show', compact('event'));
 })->name('events.show');
+Route::post('/chat', [\App\Http\Controllers\ChatbotController::class, 'chat'])->name('chat');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', function (Illuminate\Http\Request $request) {
@@ -28,8 +29,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/dashboard', [\App\Http\Controllers\AttendeeController::class, 'dashboard'])->name('dashboard');
         Route::post('/book/{eventId}', [\App\Http\Controllers\AttendeeController::class, 'bookTicket'])->name('book');
     });
-
-    Route::post('/chat', [\App\Http\Controllers\ChatbotController::class, 'chat'])->name('chat');
 
     Route::middleware('role:admin')->prefix('admin')->name('admin.')->group(function () {
         Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
