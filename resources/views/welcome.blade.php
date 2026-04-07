@@ -70,7 +70,21 @@
             
             <!-- Actions -->
             <div class="flex items-center gap-4">
-                <a href="#" class="hidden sm:flex items-center gap-2 text-[14px] font-bold text-slate-900 hover:text-primary">
+                @php
+                    $createEventUrl = route('register.organizer');
+
+                    if (auth()->check()) {
+                        if (auth()->user()->role === 'organizer') {
+                            $createEventUrl = optional(auth()->user()->organizerProfile)->status === 'verified'
+                                ? route('organizer.events.create')
+                                : route('organizer.pending');
+                        } else {
+                            $createEventUrl = route('dashboard');
+                        }
+                    }
+                @endphp
+
+                <a href="{{ $createEventUrl }}" class="hidden sm:flex items-center gap-2 text-[14px] font-bold text-slate-900 hover:text-primary transition-colors">
                     <span class="material-symbols-outlined rounded-md bg-white text-[22px]">calendar_add_on</span>
                     Buat Event
                 </a>
@@ -95,11 +109,24 @@
         <section>
             @php
                 $featuredEvent = isset($events) && count($events) > 0 ? $events->first() : null;
+                $resolveBannerUrl = function ($path, $fallback) {
+                    if (blank($path)) {
+                        return $fallback;
+                    }
+
+                    if (\Illuminate\Support\Str::startsWith($path, ['http://', 'https://'])) {
+                        return $path;
+                    }
+
+                    $normalizedPath = ltrim(preg_replace('#^/?storage/#', '', $path), '/');
+
+                    return \Illuminate\Support\Facades\Storage::url($normalizedPath);
+                };
             @endphp
             
             @if($featuredEvent)
                 <div class="relative rounded-[20px] overflow-hidden bg-white shadow-sm h-[320px] group cursor-pointer block">
-                    <img src="{{ $featuredEvent->banner_path ? asset('storage/' . $featuredEvent->banner_path) : 'https://images.unsplash.com/photo-1470229722913-7c092b122fba?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80' }}" class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
+                    <img src="{{ $resolveBannerUrl($featuredEvent->banner_path, 'https://images.unsplash.com/photo-1470229722913-7c092b122fba?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80') }}" alt="{{ $featuredEvent->title }}" class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
                     <div class="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/40 to-transparent"></div>
                     <div class="absolute bottom-0 left-0 p-8 w-full z-10 flex flex-col">
                         <span class="px-3 py-1 bg-primary/80 backdrop-blur text-white text-[10px] font-bold uppercase tracking-wider rounded-md mb-3 w-fit">Event Unggulan</span>
@@ -126,7 +153,7 @@
                     @foreach($events as $event)
                         <a href="{{ route('events.show', $event->slug ?? $event->id) }}" class="bg-white rounded-[16px] border border-slate-100 overflow-hidden shadow-sm hover:shadow-md transition-shadow group flex flex-col">
                             <div class="relative h-40 overflow-hidden bg-slate-200">
-                                <img src="{{ $event->banner_path ? asset('storage/' . $event->banner_path) : 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80' }}" alt="{{ $event->title }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                                <img src="{{ $resolveBannerUrl($event->banner_path, 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80') }}" alt="{{ $event->title }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
                             </div>
                             <div class="p-4 flex-1 flex flex-col">
                                 <h3 class="font-bold text-[15px] text-slate-900 line-clamp-2 leading-tight group-hover:text-primary transition-colors">{{ $event->title }}</h3>

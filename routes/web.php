@@ -3,6 +3,7 @@
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\OrganizerController;
+use App\Http\Controllers\OrganizerApplicationController;
 use App\Http\Controllers\Organizer\EventController;
 use Illuminate\Support\Facades\Route;
 
@@ -21,9 +22,21 @@ Route::post('/chat', [\App\Http\Controllers\ChatbotController::class, 'chat'])->
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', function (Illuminate\Http\Request $request) {
         if ($request->user()->role === 'admin') return redirect()->route('admin.dashboard');
-        if ($request->user()->role === 'organizer') return redirect()->route('organizer.dashboard');
+        if ($request->user()->role === 'organizer') {
+            if (optional($request->user()->organizerProfile)->status !== 'verified') {
+                return redirect()->route('organizer.pending');
+            }
+
+            return redirect()->route('organizer.dashboard');
+        }
         return redirect()->route('attendee.dashboard');
     })->name('dashboard');
+
+    Route::get('/organizer/pending', [OrganizerController::class, 'pending'])->name('organizer.pending');
+    Route::get('/organizer/apply', [OrganizerApplicationController::class, 'create'])->name('organizer.application.create');
+    Route::post('/organizer/apply', [OrganizerApplicationController::class, 'store'])
+        ->middleware('role:attendee')
+        ->name('organizer.application.store');
 
     Route::middleware('role:attendee')->prefix('attendee')->name('attendee.')->group(function () {
         Route::get('/dashboard', [\App\Http\Controllers\AttendeeController::class, 'dashboard'])->name('dashboard');

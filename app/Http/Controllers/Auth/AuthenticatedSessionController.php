@@ -34,7 +34,10 @@ class AuthenticatedSessionController extends Controller
         if ($user->role === 'admin') {
             $url = '/admin/dashboard';
         } elseif ($user->role === 'organizer') {
-            $url = '/organizer/dashboard';
+            $organizerStatus = optional($user->organizerProfile)->status;
+            $url = $organizerStatus === 'verified'
+                ? '/organizer/dashboard'
+                : '/organizer/pending';
         }
 
         return redirect()->intended($url);
