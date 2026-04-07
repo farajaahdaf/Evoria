@@ -26,6 +26,7 @@ class AdminController extends Controller
     {
         $profile = \App\Models\OrganizerProfile::findOrFail($id);
         $profile->update(['status' => 'verified']);
+        $profile->user?->update(['role' => 'organizer']);
         return back()->with('success', 'Organizer verified successfully.');
     }
 

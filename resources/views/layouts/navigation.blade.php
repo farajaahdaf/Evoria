@@ -34,6 +34,12 @@
                     </x-slot>
 
                     <x-slot name="content">
+                        @if (Auth::user()->role === 'attendee')
+                            <x-dropdown-link :href="route('organizer.application.create')">
+                                {{ __('Apply as Organizer') }}
+                            </x-dropdown-link>
+                        @endif
+
                         <x-dropdown-link :href="route('profile.edit')">
                             {{ __('Profile') }}
                         </x-dropdown-link>
@@ -80,6 +86,12 @@
             </div>
 
             <div class="mt-3 space-y-1">
+                @if (Auth::user()->role === 'attendee')
+                    <x-responsive-nav-link :href="route('organizer.application.create')">
+                        {{ __('Apply as Organizer') }}
+                    </x-responsive-nav-link>
+                @endif
+
                 <x-responsive-nav-link :href="route('profile.edit')">
                     {{ __('Profile') }}
                 </x-responsive-nav-link>

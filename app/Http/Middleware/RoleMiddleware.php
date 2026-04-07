@@ -19,6 +19,16 @@ class RoleMiddleware
             abort(403, 'Unauthorized access.');
         }
 
+        if (
+            in_array('organizer', $roles, true)
+            && $request->user()->role === 'organizer'
+            && optional($request->user()->organizerProfile)->status !== 'verified'
+        ) {
+            return redirect()
+                ->route('organizer.pending')
+                ->with('error', 'Akun Event Organizer Anda belum diverifikasi admin.');
+        }
+
         return $next($request);
     }
 }
