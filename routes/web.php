@@ -11,7 +11,24 @@ Route::get('/', function () {
     $events = \App\Models\Event::where('status', 'published')->latest()->take(6)->get();
     $categories = \App\Models\EventCategory::all();
     return view('welcome', compact('events', 'categories'));
-});
+})->name('home');
+
+Route::get('/kategori/{slug}', function ($slug) {
+    // Cari berdasarkan slug, jika tidak ada fallback ke pencarian nama
+    $category = \App\Models\EventCategory::where('slug', $slug)->first();
+
+    if (!$category) {
+        $category = \App\Models\EventCategory::whereRaw('LOWER(name) LIKE ?', ['%' . strtolower(str_replace('-', ' ', $slug)) . '%'])->first();
+    }
+
+    $events = \App\Models\Event::with('tickets', 'organizer')
+                ->where('category_id', optional($category)->id)
+                ->where('status', 'published')
+                ->latest()
+                ->paginate(6);
+                
+    return view('categories.show', compact('category', 'events'));
+})->name('category.show');
 
 Route::get('/event/{slug}', function ($slug) {
     $event = \App\Models\Event::with('tickets', 'organizer')->where('slug', $slug)->firstOrFail();
@@ -29,7 +46,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
             return redirect()->route('organizer.dashboard');
         }
-        return redirect()->route('attendee.dashboard');
+        return redirect()->route('home');
     })->name('dashboard');
 
     Route::get('/organizer/pending', [OrganizerController::class, 'pending'])->name('organizer.pending');
@@ -39,7 +56,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('organizer.application.store');
 
     Route::middleware('role:attendee')->prefix('attendee')->name('attendee.')->group(function () {
-        Route::get('/dashboard', [\App\Http\Controllers\AttendeeController::class, 'dashboard'])->name('dashboard');
+        Route::get('/dashboard', function () {
+            return redirect()->route('home');
+        })->name('dashboard');
         Route::post('/book/{eventId}', [\App\Http\Controllers\AttendeeController::class, 'bookTicket'])->name('book');
     });
 

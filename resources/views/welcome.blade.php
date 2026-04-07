@@ -42,66 +42,70 @@
 </head>
 <body class="bg-[#F4F6F9] min-h-screen text-slate-900" x-data="{ chatbotOpen: false }">
 
-    <!-- Navigasi Atas -->
-    <header class="bg-white border-b border-gray-200">
-        <div class="max-w-[1400px] mx-auto px-6 h-[80px] flex items-center justify-between gap-6">
-            
-            <div class="flex items-center gap-8">
-                <!-- Logo -->
-                <a href="/" class="flex items-center gap-1 shrink-0">
-                    <x-application-logo class="h-10 w-auto" />
-                </a>
+    @if(auth()->check() && auth()->user()->role === 'attendee')
+        <x-attendee-main-header />
+    @else
+        <!-- Navigasi Atas (header utama default dengan Buat Event / Daftar / Masuk) -->
+        <header class="bg-white border-b border-gray-200">
+            <div class="max-w-[1400px] mx-auto px-6 h-[80px] flex items-center justify-between gap-6">
                 
-                <!-- Links -->
-                <nav class="hidden lg:flex items-center gap-6">
-                    <a class="text-[14px] font-bold text-slate-900 hover:text-primary transition-colors" href="#">Beli Tiket</a>
-                    <a class="text-[14px] font-bold text-slate-900 hover:text-primary transition-colors" href="#">Sponsor</a>
-                    <a class="text-[14px] font-bold text-slate-900 hover:text-primary transition-colors" href="#">Bantuan</a>
-                </nav>
-            </div>
-            
-            <!-- Search -->
-            <div class="flex-1 max-w-[500px] hidden md:block">
-                <div class="relative">
-                    <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-[20px]">search</span>
-                    <input class="w-full h-[44px] pl-11 pr-4 bg-[#F1F3F5] border-none rounded-lg text-[13px] placeholder:text-slate-400 focus:ring-1 focus:ring-primary focus:bg-white transition-colors" placeholder="Cari event, artis, atau lokasi..." type="text"/>
+                <div class="flex items-center gap-8">
+                    <!-- Logo -->
+                    <a href="/" class="flex items-center gap-1 shrink-0">
+                        <x-application-logo class="h-10 w-auto" />
+                    </a>
+                    
+                    <!-- Links -->
+                    <nav class="hidden lg:flex items-center gap-6">
+                        <a class="text-[14px] font-bold text-slate-900 hover:text-primary transition-colors" href="#">Beli Tiket</a>
+                        <a class="text-[14px] font-bold text-slate-900 hover:text-primary transition-colors" href="#">Sponsor</a>
+                        <a class="text-[14px] font-bold text-slate-900 hover:text-primary transition-colors" href="#">Bantuan</a>
+                    </nav>
+                </div>
+                
+                <!-- Search -->
+                <div class="flex-1 max-w-[500px] hidden md:block">
+                    <div class="relative">
+                        <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-[20px]">search</span>
+                        <input class="w-full h-[44px] pl-11 pr-4 bg-[#F1F3F5] border-none rounded-lg text-[13px] placeholder:text-slate-400 focus:ring-1 focus:ring-primary focus:bg-white transition-colors" placeholder="Cari event, artis, atau lokasi..." type="text"/>
+                    </div>
+                </div>
+                
+                <!-- Actions -->
+                <div class="flex items-center gap-4">
+                    @php
+                        $createEventUrl = route('register.organizer');
+
+                        if (auth()->check()) {
+                            if (auth()->user()->role === 'organizer') {
+                                $createEventUrl = optional(auth()->user()->organizerProfile)->status === 'verified'
+                                    ? route('organizer.events.create')
+                                    : route('organizer.pending');
+                            } else {
+                                $createEventUrl = route('dashboard');
+                            }
+                        }
+                    @endphp
+
+                    <a href="{{ $createEventUrl }}" class="hidden sm:flex items-center gap-2 text-[14px] font-bold text-slate-900 hover:text-primary transition-colors">
+                        <span class="material-symbols-outlined rounded-md bg-white text-[22px]">calendar_add_on</span>
+                        Buat Event
+                    </a>
+                    
+                    @if (Route::has('login'))
+                        @auth
+                            <a href="{{ url('/dashboard') }}" class="px-6 py-[10px] text-[14px] font-bold border border-primary text-primary rounded-lg hover:bg-primary/5 transition-colors">Dashboard</a>
+                        @else
+                            <div class="flex items-center gap-3 border-l border-slate-200 pl-4 ml-2">
+                                <a href="{{ route('register') }}" class="px-6 py-[10px] text-[14px] font-bold border border-primary text-primary rounded-lg hover:bg-primary/5 transition-colors">Daftar</a>
+                                <a href="{{ route('login') }}" class="px-6 py-[10px] bg-primary text-white text-[14px] font-bold rounded-lg hover:bg-primary/90 transition-all shadow-sm">Masuk</a>
+                            </div>
+                        @endauth
+                    @endif
                 </div>
             </div>
-            
-            <!-- Actions -->
-            <div class="flex items-center gap-4">
-                @php
-                    $createEventUrl = route('register.organizer');
-
-                    if (auth()->check()) {
-                        if (auth()->user()->role === 'organizer') {
-                            $createEventUrl = optional(auth()->user()->organizerProfile)->status === 'verified'
-                                ? route('organizer.events.create')
-                                : route('organizer.pending');
-                        } else {
-                            $createEventUrl = route('dashboard');
-                        }
-                    }
-                @endphp
-
-                <a href="{{ $createEventUrl }}" class="hidden sm:flex items-center gap-2 text-[14px] font-bold text-slate-900 hover:text-primary transition-colors">
-                    <span class="material-symbols-outlined rounded-md bg-white text-[22px]">calendar_add_on</span>
-                    Buat Event
-                </a>
-                
-                @if (Route::has('login'))
-                    @auth
-                        <a href="{{ url('/dashboard') }}" class="px-6 py-[10px] text-[14px] font-bold border border-primary text-primary rounded-lg hover:bg-primary/5 transition-colors">Dashboard</a>
-                    @else
-                        <div class="flex items-center gap-3 border-l border-slate-200 pl-4 ml-2">
-                            <a href="{{ route('register') }}" class="px-6 py-[10px] text-[14px] font-bold border border-primary text-primary rounded-lg hover:bg-primary/5 transition-colors">Daftar</a>
-                            <a href="{{ route('login') }}" class="px-6 py-[10px] bg-primary text-white text-[14px] font-bold rounded-lg hover:bg-primary/90 transition-all shadow-sm">Masuk</a>
-                        </div>
-                    @endauth
-                @endif
-            </div>
-        </div>
-    </header>
+        </header>
+    @endif
 
     <main class="max-w-[1200px] mx-auto px-6 py-10 space-y-12">
         
@@ -184,27 +188,79 @@
         <section>
             <h2 class="text-[28px] font-bold text-black mb-6 tracking-tight">Kategori Event</h2>
             
-            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-4">
+            @if(isset($categories) && $categories->count() > 0)
                 @php
-                    $categoriesDisplay = [
-                        ['name' => 'Konser', 'icon' => 'local_activity'],
-                        ['name' => 'Festival & Pameran', 'icon' => 'celebration'],
-                        ['name' => 'Workshop', 'icon' => 'build'],
-                        ['name' => 'Seminar', 'icon' => 'campaign'],
-                        ['name' => 'Pertunjukan & Penampilan', 'icon' => 'hourglass_empty'],
-                        ['name' => 'Tur & Perjalanan', 'icon' => 'luggage'],
-                        ['name' => 'Social Gethering', 'icon' => 'groups']
+                    // Mapping icon berdasarkan keyword nama kategori (English & Indonesian)
+                    $iconMap = [
+                        // Music / Concert
+                        'music'        => 'local_activity',
+                        'concert'      => 'local_activity',
+                        'konser'       => 'local_activity',
+                        'musik'        => 'local_activity',
+                        // Tech / Conference
+                        'tech'         => 'computer',
+                        'conference'   => 'groups',
+                        'teknologi'    => 'computer',
+                        // Workshop
+                        'workshop'     => 'build',
+                        // Sports
+                        'sport'        => 'sports_soccer',
+                        'olahraga'     => 'sports_soccer',
+                        // Art / Exhibition
+                        'art'          => 'palette',
+                        'exhibition'   => 'photo_library',
+                        'pameran'      => 'photo_library',
+                        'seni'         => 'palette',
+                        // Festival
+                        'festival'     => 'celebration',
+                        // Seminar
+                        'seminar'      => 'campaign',
+                        // Pertunjukan
+                        'pertunjukan'  => 'theater_comedy',
+                        'penampilan'   => 'theater_comedy',
+                        // Travel / Tour
+                        'tur'          => 'luggage',
+                        'perjalanan'   => 'luggage',
+                        'travel'       => 'luggage',
+                        // Social
+                        'social'       => 'groups',
+                        'gathering'    => 'groups',
+                        'gethering'    => 'groups',
+                        // Food
+                        'kuliner'      => 'restaurant',
+                        'food'         => 'restaurant',
+                        // Education
+                        'pendidikan'   => 'school',
+                        'education'    => 'school',
+                        // Business
+                        'bisnis'       => 'business_center',
+                        'business'     => 'business_center',
+                        // Film
+                        'film'         => 'movie',
                     ];
+
+                    $getIcon = function($name) use ($iconMap) {
+                        $lower = strtolower($name);
+                        foreach ($iconMap as $keyword => $icon) {
+                            if (str_contains($lower, $keyword)) return $icon;
+                        }
+                        return 'event'; // default icon
+                    };
                 @endphp
 
-                @foreach($categoriesDisplay as $cat)
-                    <div class="bg-white border border-slate-200 rounded-[16px] py-6 px-2 flex flex-col items-center justify-center gap-3 cursor-pointer hover:border-primary hover:shadow-md transition-all focus:outline-none focus:ring-2 focus:ring-primary group">
-                        <!-- We use material symbols as simple placeholders since exact custom icons aren't available, or simple SVG -->
-                        <span class="material-symbols-outlined text-[42px] text-slate-800 font-light group-hover:text-primary transition-colors">{{ $cat['icon'] }}</span>
-                        <p class="text-[13px] font-bold text-slate-800 text-center leading-tight max-w-[100px] group-hover:text-primary transition-colors">{{ $cat['name'] }}</p>
-                    </div>
-                @endforeach
-            </div>
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+                    @foreach($categories as $cat)
+                        <a href="{{ route('category.show', ['slug' => $cat->slug ?? \Illuminate\Support\Str::slug($cat->name)]) }}" class="block bg-white border border-slate-200 rounded-[16px] py-6 px-2 flex flex-col items-center justify-center gap-3 cursor-pointer hover:border-primary hover:shadow-md transition-all focus:outline-none focus:ring-2 focus:ring-primary group">
+                            <span class="material-symbols-outlined text-[42px] text-slate-800 font-light group-hover:text-primary transition-colors">{{ $getIcon($cat->name) }}</span>
+                            <p class="text-[13px] font-bold text-slate-800 text-center leading-tight max-w-[100px] group-hover:text-primary transition-colors">{{ $cat->name }}</p>
+                        </a>
+                    @endforeach
+                </div>
+            @else
+                <div class="bg-white rounded-[16px] h-[120px] flex items-center justify-center border border-slate-100 text-slate-400 text-[15px] font-medium">
+                    Belum ada kategori tersedia.
+                </div>
+            @endif
         </section>
 
     </main>
