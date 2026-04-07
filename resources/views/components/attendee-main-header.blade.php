@@ -1,6 +1,8 @@
 @php
     $user = auth()->user();
-    $avatarUrl = "https://ui-avatars.com/api/?name=" . urlencode($user->name ?? 'User') . "&background=2563EB&color=ffffff&size=128";
+    $avatarUrl = $user && $user->profile_photo_path
+        ? \Illuminate\Support\Facades\Storage::url($user->profile_photo_path)
+        : "https://ui-avatars.com/api/?name=" . urlencode($user->name ?? 'User') . "&background=2563EB&color=ffffff&size=128";
 @endphp
 
 <header class="bg-white border-b border-gray-200" x-data="{ attendeeMenuOpen: false }">
