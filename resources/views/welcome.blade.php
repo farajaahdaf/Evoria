@@ -42,66 +42,70 @@
 </head>
 <body class="bg-[#F4F6F9] min-h-screen text-slate-900" x-data="{ chatbotOpen: false }">
 
-    <!-- Navigasi Atas -->
-    <header class="bg-white border-b border-gray-200">
-        <div class="max-w-[1400px] mx-auto px-6 h-[80px] flex items-center justify-between gap-6">
-            
-            <div class="flex items-center gap-8">
-                <!-- Logo -->
-                <a href="/" class="flex items-center gap-1 shrink-0">
-                    <x-application-logo class="h-10 w-auto" />
-                </a>
+    @if(auth()->check() && auth()->user()->role === 'attendee')
+        <x-attendee-main-header />
+    @else
+        <!-- Navigasi Atas (header utama default dengan Buat Event / Daftar / Masuk) -->
+        <header class="bg-white border-b border-gray-200">
+            <div class="max-w-[1400px] mx-auto px-6 h-[80px] flex items-center justify-between gap-6">
                 
-                <!-- Links -->
-                <nav class="hidden lg:flex items-center gap-6">
-                    <a class="text-[14px] font-bold text-slate-900 hover:text-primary transition-colors" href="#">Beli Tiket</a>
-                    <a class="text-[14px] font-bold text-slate-900 hover:text-primary transition-colors" href="#">Sponsor</a>
-                    <a class="text-[14px] font-bold text-slate-900 hover:text-primary transition-colors" href="#">Bantuan</a>
-                </nav>
-            </div>
-            
-            <!-- Search -->
-            <div class="flex-1 max-w-[500px] hidden md:block">
-                <div class="relative">
-                    <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-[20px]">search</span>
-                    <input class="w-full h-[44px] pl-11 pr-4 bg-[#F1F3F5] border-none rounded-lg text-[13px] placeholder:text-slate-400 focus:ring-1 focus:ring-primary focus:bg-white transition-colors" placeholder="Cari event, artis, atau lokasi..." type="text"/>
+                <div class="flex items-center gap-8">
+                    <!-- Logo -->
+                    <a href="/" class="flex items-center gap-1 shrink-0">
+                        <x-application-logo class="h-10 w-auto" />
+                    </a>
+                    
+                    <!-- Links -->
+                    <nav class="hidden lg:flex items-center gap-6">
+                        <a class="text-[14px] font-bold text-slate-900 hover:text-primary transition-colors" href="#">Beli Tiket</a>
+                        <a class="text-[14px] font-bold text-slate-900 hover:text-primary transition-colors" href="#">Sponsor</a>
+                        <a class="text-[14px] font-bold text-slate-900 hover:text-primary transition-colors" href="#">Bantuan</a>
+                    </nav>
+                </div>
+                
+                <!-- Search -->
+                <div class="flex-1 max-w-[500px] hidden md:block">
+                    <div class="relative">
+                        <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-[20px]">search</span>
+                        <input class="w-full h-[44px] pl-11 pr-4 bg-[#F1F3F5] border-none rounded-lg text-[13px] placeholder:text-slate-400 focus:ring-1 focus:ring-primary focus:bg-white transition-colors" placeholder="Cari event, artis, atau lokasi..." type="text"/>
+                    </div>
+                </div>
+                
+                <!-- Actions -->
+                <div class="flex items-center gap-4">
+                    @php
+                        $createEventUrl = route('register.organizer');
+
+                        if (auth()->check()) {
+                            if (auth()->user()->role === 'organizer') {
+                                $createEventUrl = optional(auth()->user()->organizerProfile)->status === 'verified'
+                                    ? route('organizer.events.create')
+                                    : route('organizer.pending');
+                            } else {
+                                $createEventUrl = route('dashboard');
+                            }
+                        }
+                    @endphp
+
+                    <a href="{{ $createEventUrl }}" class="hidden sm:flex items-center gap-2 text-[14px] font-bold text-slate-900 hover:text-primary transition-colors">
+                        <span class="material-symbols-outlined rounded-md bg-white text-[22px]">calendar_add_on</span>
+                        Buat Event
+                    </a>
+                    
+                    @if (Route::has('login'))
+                        @auth
+                            <a href="{{ url('/dashboard') }}" class="px-6 py-[10px] text-[14px] font-bold border border-primary text-primary rounded-lg hover:bg-primary/5 transition-colors">Dashboard</a>
+                        @else
+                            <div class="flex items-center gap-3 border-l border-slate-200 pl-4 ml-2">
+                                <a href="{{ route('register') }}" class="px-6 py-[10px] text-[14px] font-bold border border-primary text-primary rounded-lg hover:bg-primary/5 transition-colors">Daftar</a>
+                                <a href="{{ route('login') }}" class="px-6 py-[10px] bg-primary text-white text-[14px] font-bold rounded-lg hover:bg-primary/90 transition-all shadow-sm">Masuk</a>
+                            </div>
+                        @endauth
+                    @endif
                 </div>
             </div>
-            
-            <!-- Actions -->
-            <div class="flex items-center gap-4">
-                @php
-                    $createEventUrl = route('register.organizer');
-
-                    if (auth()->check()) {
-                        if (auth()->user()->role === 'organizer') {
-                            $createEventUrl = optional(auth()->user()->organizerProfile)->status === 'verified'
-                                ? route('organizer.events.create')
-                                : route('organizer.pending');
-                        } else {
-                            $createEventUrl = route('dashboard');
-                        }
-                    }
-                @endphp
-
-                <a href="{{ $createEventUrl }}" class="hidden sm:flex items-center gap-2 text-[14px] font-bold text-slate-900 hover:text-primary transition-colors">
-                    <span class="material-symbols-outlined rounded-md bg-white text-[22px]">calendar_add_on</span>
-                    Buat Event
-                </a>
-                
-                @if (Route::has('login'))
-                    @auth
-                        <a href="{{ url('/dashboard') }}" class="px-6 py-[10px] text-[14px] font-bold border border-primary text-primary rounded-lg hover:bg-primary/5 transition-colors">Dashboard</a>
-                    @else
-                        <div class="flex items-center gap-3 border-l border-slate-200 pl-4 ml-2">
-                            <a href="{{ route('register') }}" class="px-6 py-[10px] text-[14px] font-bold border border-primary text-primary rounded-lg hover:bg-primary/5 transition-colors">Daftar</a>
-                            <a href="{{ route('login') }}" class="px-6 py-[10px] bg-primary text-white text-[14px] font-bold rounded-lg hover:bg-primary/90 transition-all shadow-sm">Masuk</a>
-                        </div>
-                    @endauth
-                @endif
-            </div>
-        </div>
-    </header>
+        </header>
+    @endif
 
     <main class="max-w-[1200px] mx-auto px-6 py-10 space-y-12">
         
