@@ -56,9 +56,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('organizer.application.store');
 
     Route::middleware('role:attendee')->prefix('attendee')->name('attendee.')->group(function () {
-        Route::get('/dashboard', function () {
-            return redirect()->route('home');
-        })->name('dashboard');
+        Route::get('/dashboard', [\App\Http\Controllers\AttendeeController::class, 'dashboard'])->name('dashboard');
         Route::post('/book/{eventId}', [\App\Http\Controllers\AttendeeController::class, 'bookTicket'])->name('book');
     });
 
