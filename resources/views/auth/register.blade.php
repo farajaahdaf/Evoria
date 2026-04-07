@@ -37,19 +37,19 @@
                 <x-input-error :messages="$errors->get('password_confirmation')" class="mt-1" />
             </div>
 
-            <button type="submit" class="inline-flex w-full items-center justify-center rounded-2xl bg-blue-600 px-5 py-4 text-sm font-extrabold text-white shadow-[0_14px_34px_rgba(37,99,235,0.28)] transition hover:-translate-y-0.5 hover:bg-blue-700">
+            <button type="submit" class="inline-flex w-full items-center justify-center rounded-2xl bg-primary px-5 py-4 text-sm font-extrabold text-white shadow-[0_14px_34px_rgba(37,99,235,0.28)] transition hover:-translate-y-0.5 hover:bg-primary/90">
                 Buat akun
             </button>
         </form>
 
         <div class="border-t border-slate-200 pt-6 text-sm text-slate-600">
             Sudah punya akun?
-            <a href="{{ route('login') }}" class="font-extrabold text-blue-600 transition hover:text-blue-700 hover:underline">Masuk di sini</a>
+            <a href="{{ route('login') }}" class="font-extrabold text-primary transition hover:text-primary/90 hover:underline">Masuk di sini</a>
         </div>
 
         <div class="rounded-2xl border border-indigo-100 bg-indigo-50/70 px-4 py-3 text-sm text-indigo-800">
             Ingin membuat event sebagai penyelenggara?
-            <a href="{{ route('register.organizer') }}" class="font-bold text-indigo-700 underline underline-offset-2">Daftar sebagai Event Organizer</a>
+            <a href="{{ route('register.organizer') }}" class="font-bold text-primary underline underline-offset-2">Daftar sebagai Event Organizer</a>
         </div>
     </div>
 </x-guest-layout>

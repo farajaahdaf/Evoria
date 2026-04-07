@@ -10,7 +10,7 @@
             
             <div class="flex items-center justify-between">
                 <h3 class="text-2xl font-bold text-gray-800">Your Hosted Events</h3>
-                <a href="{{ route('organizer.events.create') }}" class="px-5 py-2.5 bg-indigo-600 text-white font-bold rounded-lg shadow-md hover:bg-indigo-700 transition">
+                <a href="{{ route('organizer.events.create') }}" class="px-5 py-2.5 bg-primary text-white font-bold rounded-lg shadow-md hover:bg-primary/90 transition">
                     + Create Event
                 </a>
             </div>
@@ -62,7 +62,7 @@
                             <form action="{{ route('organizer.events.update', $event->id) }}" method="POST" class="flex-1">
                                 @csrf @method('PUT')
                                 <input type="hidden" name="action" value="submit">
-                                <button type="submit" class="w-full text-center py-2 bg-indigo-50 text-indigo-700 font-medium rounded hover:bg-indigo-100 transition">Submit Review</button>
+                                <button type="submit" class="w-full text-center py-2 bg-blue-50 text-primary font-medium rounded hover:bg-blue-100 transition">Submit Review</button>
                             </form>
                             @endif
                         </div>
@@ -75,7 +75,7 @@
                     </div>
                     <h4 class="text-xl font-bold text-gray-800 mb-2">You haven't created any events</h4>
                     <p class="text-gray-500 mb-6">Start managing your first offline event right now.</p>
-                    <a href="{{ route('organizer.events.create') }}" class="px-6 py-3 bg-indigo-600 text-white font-bold rounded-lg shadow-md hover:bg-indigo-700 transition inline-block">
+                    <a href="{{ route('organizer.events.create') }}" class="px-6 py-3 bg-primary text-white font-bold rounded-lg shadow-md hover:bg-primary/90 transition inline-block">
                         Create Your First Event
                     </a>
                 </div>

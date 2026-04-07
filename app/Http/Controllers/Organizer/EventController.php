@@ -38,25 +38,39 @@ class EventController extends Controller
             'tickets.*.name' => 'required|string|max:255',
             'tickets.*.price' => 'required|numeric|min:0',
             'tickets.*.quota' => 'required|integer|min:1',
+            'portfolio' => 'nullable|file|mimes:pdf,jpeg,png,jpg|max:5120',
+            'proposal' => 'nullable|file|mimes:pdf|max:10240',
         ]);
 
         $bannerPath = null;
         if ($request->hasFile('banner')) {
-            $bannerPath = $request->file('banner')->store('events', 'public');
+            $bannerPath = $request->file('banner')->store('events/banners', 'public');
         }
 
-        DB::transaction(function () use ($request, $bannerPath) {
+        $portfolioPath = null;
+        if ($request->hasFile('portfolio')) {
+            $portfolioPath = $request->file('portfolio')->store('events/portfolios', 'public');
+        }
+
+        $proposalPath = null;
+        if ($request->hasFile('proposal')) {
+            $proposalPath = $request->file('proposal')->store('events/proposals', 'public');
+        }
+
+        DB::transaction(function () use ($request, $bannerPath, $portfolioPath, $proposalPath) {
             $event = $request->user()->events()->create([
                 'category_id' => $request->category_id,
                 'title' => $request->title,
                 'slug' => Str::slug($request->title) . '-' . uniqid(),
                 'banner_path' => $bannerPath,
+                'portfolio_path' => $portfolioPath,
+                'proposal_path' => $proposalPath,
                 'description' => $request->description,
                 'start_time' => $request->start_time,
                 'end_time' => $request->end_time,
                 'location_name' => $request->location_name,
                 'address' => $request->address,
-                'status' => 'draft',
+                'status' => 'pending_review',
             ]);
 
             foreach ($request->tickets as $ticketData) {
@@ -76,13 +90,6 @@ class EventController extends Controller
     {
         $event = auth()->user()->events()->with('tickets', 'category')->findOrFail($id);
         return view('organizer.events.show', compact('event'));
-    }
-
-    public function edit(string $id)
-    {
-        $event = auth()->user()->events()->findOrFail($id);
-        $categories = EventCategory::all();
-        return view('organizer.events.edit', compact('event', 'categories'));
     }
 
     public function update(Request $request, string $id)
