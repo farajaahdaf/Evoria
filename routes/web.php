@@ -11,7 +11,7 @@ Route::get('/', function () {
     $events = \App\Models\Event::where('status', 'published')->latest()->take(6)->get();
     $categories = \App\Models\EventCategory::all();
     return view('welcome', compact('events', 'categories'));
-});
+})->name('home');
 
 Route::get('/kategori/{slug}', function ($slug) {
     // Cari berdasarkan slug, jika tidak ada fallback ke pencarian nama
@@ -46,7 +46,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
             return redirect()->route('organizer.dashboard');
         }
-        return redirect()->route('attendee.dashboard');
+        return redirect()->route('home');
     })->name('dashboard');
 
     Route::get('/organizer/pending', [OrganizerController::class, 'pending'])->name('organizer.pending');
@@ -56,7 +56,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('organizer.application.store');
 
     Route::middleware('role:attendee')->prefix('attendee')->name('attendee.')->group(function () {
-        Route::get('/dashboard', [\App\Http\Controllers\AttendeeController::class, 'dashboard'])->name('dashboard');
+        Route::get('/dashboard', function () {
+            return redirect()->route('home');
+        })->name('dashboard');
         Route::post('/book/{eventId}', [\App\Http\Controllers\AttendeeController::class, 'bookTicket'])->name('book');
     });
 

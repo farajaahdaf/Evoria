@@ -4,26 +4,43 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ $event->title }} - Evoria</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    </style>
 </head>
-<body class="antialiased bg-gray-50 text-gray-900 font-sans" x-data="{ bookingModal: false, selectedTicket: null }">
+<body class="antialiased bg-[#F4F6F9] text-gray-900 font-sans" x-data="{ bookingModal: false, selectedTicket: null }">
     
-    <!-- Navbar (Simplified) -->
-    <nav class="bg-white border-b border-gray-200 sticky top-0 z-40">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-16">
-                <a href="/" class="text-2xl font-bold tracking-tight text-blue-600">Evo<span class="text-yellow-400">ria</span></a>
-                <div class="flex items-center space-x-4">
-                    @auth
-                        <a href="{{ url('/dashboard') }}" class="font-bold text-gray-600 hover:text-blue-600 transition">Dashboard</a>
-                    @else
+    @auth
+        @if(auth()->user()->role === 'attendee')
+            <x-attendee-main-header />
+        @else
+            <nav class="bg-white border-b border-gray-200 sticky top-0 z-40">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="flex justify-between items-center h-16">
+                        <a href="/" class="text-2xl font-bold tracking-tight text-blue-600">Evo<span class="text-yellow-400">ria</span></a>
+                        <div class="flex items-center space-x-4">
+                            <a href="{{ url('/dashboard') }}" class="font-bold text-gray-600 hover:text-blue-600 transition">Dashboard</a>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+        @endif
+    @else
+        <nav class="bg-white border-b border-gray-200 sticky top-0 z-40">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center h-16">
+                    <a href="/" class="text-2xl font-bold tracking-tight text-blue-600">Evo<span class="text-yellow-400">ria</span></a>
+                    <div class="flex items-center space-x-4">
                         <a href="{{ route('login') }}" class="font-bold text-gray-600 hover:text-blue-600 transition">Log in</a>
-                    @endauth
+                    </div>
                 </div>
             </div>
-        </div>
-    </nav>
+        </nav>
+    @endauth
 
     <!-- Event Hero -->
     <div class="relative bg-gray-900 h-96">
