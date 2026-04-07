@@ -13,6 +13,23 @@ Route::get('/', function () {
     return view('welcome', compact('events', 'categories'));
 });
 
+Route::get('/kategori/{slug}', function ($slug) {
+    // Cari berdasarkan slug, jika tidak ada fallback ke pencarian nama
+    $category = \App\Models\EventCategory::where('slug', $slug)->first();
+
+    if (!$category) {
+        $category = \App\Models\EventCategory::whereRaw('LOWER(name) LIKE ?', ['%' . strtolower(str_replace('-', ' ', $slug)) . '%'])->first();
+    }
+
+    $events = \App\Models\Event::with('tickets', 'organizer')
+                ->where('category_id', optional($category)->id)
+                ->where('status', 'published')
+                ->latest()
+                ->paginate(6);
+                
+    return view('categories.show', compact('category', 'events'));
+})->name('category.show');
+
 Route::get('/event/{slug}', function ($slug) {
     $event = \App\Models\Event::with('tickets', 'organizer')->where('slug', $slug)->firstOrFail();
     return view('events.show', compact('event'));
