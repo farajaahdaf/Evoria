@@ -12,6 +12,25 @@
         <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
         @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+        <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+        <script>
+            tailwind.config = {
+                darkMode: "class",
+                theme: {
+                    extend: {
+                        colors: {
+                            "primary": "#2563EB",
+                            "hero-bg": "#F8F9FA",
+                            "dark-footer": "#0F172A",
+                        },
+                        fontFamily: {
+                            "sans": ["Plus Jakarta Sans", "sans-serif"],
+                        },
+                    },
+                },
+            }
+        </script>
     </head>
     <body class="min-h-screen bg-slate-100 text-slate-900 antialiased" style="font-family: 'Plus Jakarta Sans', sans-serif;">
         <div class="relative min-h-screen overflow-hidden">

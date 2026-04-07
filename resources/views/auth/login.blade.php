@@ -58,7 +58,7 @@
                 Tetap masuk di perangkat ini
             </label>
 
-            <button type="submit" class="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-blue-600 px-5 py-4 text-sm font-extrabold text-white shadow-[0_14px_34px_rgba(37,99,235,0.28)] transition hover:-translate-y-0.5 hover:bg-blue-700">
+            <button type="submit" class="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-5 py-4 text-sm font-extrabold text-white shadow-[0_14px_34px_rgba(37,99,235,0.28)] transition hover:-translate-y-0.5 hover:bg-primary/90">
                 Masuk sekarang
                 <svg class="h-4 w-4 transition group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
@@ -68,12 +68,12 @@
 
         <div class="border-t border-slate-200 pt-6 text-sm text-slate-600">
             Belum punya akun?
-            <a href="{{ route('register') }}" class="font-extrabold text-blue-600 transition hover:text-blue-700 hover:underline">Daftar akun Evoria</a>
+            <a href="{{ route('register') }}" class="font-extrabold text-primary transition hover:text-primary/90 hover:underline">Daftar akun Evoria</a>
         </div>
 
         <div class="rounded-2xl border border-indigo-100 bg-indigo-50/70 px-4 py-3 text-sm text-indigo-800">
             Ingin jadi penyelenggara event?
-            <a href="{{ route('register.organizer') }}" class="font-bold text-indigo-700 underline underline-offset-2">Ajukan akun Event Organizer</a>
+            <a href="{{ route('register.organizer') }}" class="font-bold text-primary underline underline-offset-2">Ajukan akun Event Organizer</a>
         </div>
     </div>
 </x-guest-layout>

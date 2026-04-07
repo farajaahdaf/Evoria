@@ -65,6 +65,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware('role:admin')->prefix('admin')->name('admin.')->group(function () {
         Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
         Route::get('/organizers', [AdminController::class, 'verifyOrganizers'])->name('organizers');
+        Route::get('/organizers/{id}', [AdminController::class, 'showOrganizer'])->name('organizers.show');
         Route::post('/organizers/{id}/verify', [AdminController::class, 'approveOrganizer'])->name('organizers.verify');
         Route::get('/events', [AdminController::class, 'approveEvents'])->name('events');
         Route::post('/events/{id}/approve', [AdminController::class, 'publishEvent'])->name('events.approve');

@@ -17,16 +17,14 @@ class Event extends Model
         'end_time',
         'location_name',
         'address',
-        'latitude',
-        'longitude',
+        'portfolio_path',
+        'proposal_path',
         'status',
     ];
 
     protected $casts = [
         'start_time' => 'datetime',
         'end_time' => 'datetime',
-        'latitude' => 'decimal:8',
-        'longitude' => 'decimal:8',
     ];
 
     public function organizer()

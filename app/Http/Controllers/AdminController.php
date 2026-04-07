@@ -22,6 +22,12 @@ class AdminController extends Controller
         return view('admin.organizers', compact('organizers'));
     }
 
+    public function showOrganizer($id)
+    {
+        $organizer = \App\Models\OrganizerProfile::with('user')->findOrFail($id);
+        return view('admin.organizer-detail', compact('organizer'));
+    }
+
     public function approveOrganizer(Request $request, $id)
     {
         $profile = \App\Models\OrganizerProfile::findOrFail($id);
