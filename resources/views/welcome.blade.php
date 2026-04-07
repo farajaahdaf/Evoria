@@ -184,27 +184,79 @@
         <section>
             <h2 class="text-[28px] font-bold text-black mb-6 tracking-tight">Kategori Event</h2>
             
-            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-4">
+            @if(isset($categories) && $categories->count() > 0)
                 @php
-                    $categoriesDisplay = [
-                        ['name' => 'Konser', 'icon' => 'local_activity'],
-                        ['name' => 'Festival & Pameran', 'icon' => 'celebration'],
-                        ['name' => 'Workshop', 'icon' => 'build'],
-                        ['name' => 'Seminar', 'icon' => 'campaign'],
-                        ['name' => 'Pertunjukan & Penampilan', 'icon' => 'hourglass_empty'],
-                        ['name' => 'Tur & Perjalanan', 'icon' => 'luggage'],
-                        ['name' => 'Social Gethering', 'icon' => 'groups']
+                    // Mapping icon berdasarkan keyword nama kategori (English & Indonesian)
+                    $iconMap = [
+                        // Music / Concert
+                        'music'        => 'local_activity',
+                        'concert'      => 'local_activity',
+                        'konser'       => 'local_activity',
+                        'musik'        => 'local_activity',
+                        // Tech / Conference
+                        'tech'         => 'computer',
+                        'conference'   => 'groups',
+                        'teknologi'    => 'computer',
+                        // Workshop
+                        'workshop'     => 'build',
+                        // Sports
+                        'sport'        => 'sports_soccer',
+                        'olahraga'     => 'sports_soccer',
+                        // Art / Exhibition
+                        'art'          => 'palette',
+                        'exhibition'   => 'photo_library',
+                        'pameran'      => 'photo_library',
+                        'seni'         => 'palette',
+                        // Festival
+                        'festival'     => 'celebration',
+                        // Seminar
+                        'seminar'      => 'campaign',
+                        // Pertunjukan
+                        'pertunjukan'  => 'theater_comedy',
+                        'penampilan'   => 'theater_comedy',
+                        // Travel / Tour
+                        'tur'          => 'luggage',
+                        'perjalanan'   => 'luggage',
+                        'travel'       => 'luggage',
+                        // Social
+                        'social'       => 'groups',
+                        'gathering'    => 'groups',
+                        'gethering'    => 'groups',
+                        // Food
+                        'kuliner'      => 'restaurant',
+                        'food'         => 'restaurant',
+                        // Education
+                        'pendidikan'   => 'school',
+                        'education'    => 'school',
+                        // Business
+                        'bisnis'       => 'business_center',
+                        'business'     => 'business_center',
+                        // Film
+                        'film'         => 'movie',
                     ];
+
+                    $getIcon = function($name) use ($iconMap) {
+                        $lower = strtolower($name);
+                        foreach ($iconMap as $keyword => $icon) {
+                            if (str_contains($lower, $keyword)) return $icon;
+                        }
+                        return 'event'; // default icon
+                    };
                 @endphp
 
-                @foreach($categoriesDisplay as $cat)
-                    <div class="bg-white border border-slate-200 rounded-[16px] py-6 px-2 flex flex-col items-center justify-center gap-3 cursor-pointer hover:border-primary hover:shadow-md transition-all focus:outline-none focus:ring-2 focus:ring-primary group">
-                        <!-- We use material symbols as simple placeholders since exact custom icons aren't available, or simple SVG -->
-                        <span class="material-symbols-outlined text-[42px] text-slate-800 font-light group-hover:text-primary transition-colors">{{ $cat['icon'] }}</span>
-                        <p class="text-[13px] font-bold text-slate-800 text-center leading-tight max-w-[100px] group-hover:text-primary transition-colors">{{ $cat['name'] }}</p>
-                    </div>
-                @endforeach
-            </div>
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+                    @foreach($categories as $cat)
+                        <a href="{{ route('category.show', ['slug' => $cat->slug ?? \Illuminate\Support\Str::slug($cat->name)]) }}" class="block bg-white border border-slate-200 rounded-[16px] py-6 px-2 flex flex-col items-center justify-center gap-3 cursor-pointer hover:border-primary hover:shadow-md transition-all focus:outline-none focus:ring-2 focus:ring-primary group">
+                            <span class="material-symbols-outlined text-[42px] text-slate-800 font-light group-hover:text-primary transition-colors">{{ $getIcon($cat->name) }}</span>
+                            <p class="text-[13px] font-bold text-slate-800 text-center leading-tight max-w-[100px] group-hover:text-primary transition-colors">{{ $cat->name }}</p>
+                        </a>
+                    @endforeach
+                </div>
+            @else
+                <div class="bg-white rounded-[16px] h-[120px] flex items-center justify-center border border-slate-100 text-slate-400 text-[15px] font-medium">
+                    Belum ada kategori tersedia.
+                </div>
+            @endif
         </section>
 
     </main>
