@@ -8,7 +8,13 @@ class AttendeeController extends Controller
 {
     public function dashboard(Request $request)
     {
-        return redirect()->route('home');
+        $orders = $request->user()
+            ->orders()
+            ->with(['orderItems.ticket.event'])
+            ->latest()
+            ->get();
+
+        return view('attendee.tickets', compact('orders'));
     }
 
     public function bookTicket(Request $request, $eventId)
