@@ -3,11 +3,14 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
-
 use App\Http\Controllers\Api\EventController;
 use App\Http\Controllers\Api\CategoryController;
+use App\Http\Controllers\MidtransPaymentController;
 
 Route::prefix('v1')->group(function () {
+    Route::post('/payments/midtrans/notification', [MidtransPaymentController::class, 'notification'])
+        ->name('payments.midtrans.notification');
+
     // Auth Routes
     Route::post('/auth/register', [AuthController::class, 'register']);
     Route::post('/auth/login', [AuthController::class, 'login']);

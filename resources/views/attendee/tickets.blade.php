@@ -30,6 +30,12 @@
             </div>
         @endif
 
+        @if(session('error'))
+            <div class="bg-red-100 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm font-semibold">
+                {{ session('error') }}
+            </div>
+        @endif
+
         <section class="space-y-5">
             @forelse($orders as $order)
                 @foreach($order->orderItems as $item)
@@ -61,7 +67,12 @@
                                     <h2 class="text-xl md:text-2xl font-black text-slate-900 leading-tight">
                                         {{ $event->title ?? 'Event Tidak Tersedia' }}
                                     </h2>
-                                    <span class="px-3 py-1 rounded-full text-xs font-bold uppercase bg-green-100 text-green-700">
+                                    <span @class([
+                                        'px-3 py-1 rounded-full text-xs font-bold uppercase',
+                                        'bg-green-100 text-green-700' => $order->status === 'paid',
+                                        'bg-amber-100 text-amber-700' => $order->status === 'pending',
+                                        'bg-red-100 text-red-700' => in_array($order->status, ['failed', 'cancelled', 'refunded'], true),
+                                    ])>
                                         {{ $order->status }}
                                     </span>
                                 </div>
@@ -91,6 +102,19 @@
                                         <span class="font-black text-slate-900">Rp {{ number_format($order->total_amount, 0, ',', '.') }}</span>
                                     </p>
                                 </div>
+
+                                @if($order->status === 'pending' && $order->snap_token && $midtransEnabled)
+                                    <div class="mt-4 flex flex-wrap items-center gap-3">
+                                        <button
+                                            type="button"
+                                            class="inline-flex items-center rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-white hover:bg-primary/90 transition-colors"
+                                            onclick="payPendingOrder('{{ $order->snap_token }}')"
+                                        >
+                                            Lanjutkan Pembayaran
+                                        </button>
+                                        <p class="text-xs text-slate-500">Order ini masih menunggu pembayaran dari Midtrans.</p>
+                                    </div>
+                                @endif
                             </div>
                         </div>
                     </article>
@@ -109,5 +133,36 @@
             @endforelse
         </section>
     </main>
+
+    @if($midtransEnabled)
+        <script
+            type="text/javascript"
+            src="{{ $midtransSnapJsUrl }}"
+            data-client-key="{{ $midtransClientKey }}"
+        ></script>
+        <script>
+            function payPendingOrder(snapToken) {
+                if (!window.snap) {
+                    alert('Snap.js Midtrans belum termuat.');
+                    return;
+                }
+
+                window.snap.pay(snapToken, {
+                    onSuccess: function () {
+                        window.location.reload();
+                    },
+                    onPending: function () {
+                        window.location.reload();
+                    },
+                    onError: function () {
+                        alert('Pembayaran gagal diproses. Silakan coba lagi.');
+                    },
+                    onClose: function () {
+                        window.location.reload();
+                    }
+                });
+            }
+        </script>
+    @endif
 </body>
 </html>

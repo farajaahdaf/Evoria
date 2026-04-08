@@ -32,7 +32,12 @@ Route::get('/kategori/{slug}', function ($slug) {
 
 Route::get('/event/{slug}', function ($slug) {
     $event = \App\Models\Event::with('tickets', 'organizer')->where('slug', $slug)->firstOrFail();
-    return view('events.show', compact('event'));
+    return view('events.show', [
+        'event' => $event,
+        'midtransClientKey' => config('services.midtrans.client_key'),
+        'midtransSnapJsUrl' => app(\App\Services\MidtransService::class)->getSnapJsUrl(),
+        'midtransEnabled' => app(\App\Services\MidtransService::class)->isConfigured(),
+    ]);
 })->name('events.show');
 Route::post('/chat', [\App\Http\Controllers\ChatbotController::class, 'chat'])->name('chat');
 

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\URL;
 
 class ChatbotController extends Controller
 {
@@ -103,15 +104,16 @@ class ChatbotController extends Controller
             }
 
             // STEP 3: Context Injection using ONLY the filtered results
-            $appUrl = url('/event/');
+            $eventBaseUrl = rtrim(URL::to('/event'), '/');
             $systemPrompt = "You are a helpful and friendly customer service assistant for 'Evoria', an event marketplace.
             Here is a highly filtered list of currently published events matching the user's intent. Do NOT invent events.
             If the list is empty `[]`, apologize and say no matching events are available right now.
             
             CRITICAL INSTRUCTIONS:
             1. Mention ticket prices (from 'tickets' array). If price is 0, it means it's FREE.
-            2. ALWAYS provide a clickable link using Markdown format: [Event Title]({$appUrl}/slug-of-the-event)
-            3. Keep answers concise, use Markdown formatting for lists and bold text.
+            2. ALWAYS provide a clickable link using Markdown format: [Event Title]({$eventBaseUrl}/event-slug)
+            3. Keep answers concise, complete every event card/listing you start, and use Markdown formatting for lists and bold text.
+            4. Never cut off mid-sentence, mid-list, or mid-link.
 
             Filtered Events List: \n" . json_encode($events->values()->all());
 
@@ -121,8 +123,8 @@ class ChatbotController extends Controller
                     ['role' => 'system', 'content' => $systemPrompt],
                     ['role' => 'user', 'content' => $request->prompt]
                 ],
-                'max_tokens' => 200,
-                'temperature' => 0.5
+                'max_tokens' => 500,
+                'temperature' => 0.4
             ]);
 
             if ($finalResponse->successful()) {
