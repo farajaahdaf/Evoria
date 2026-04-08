@@ -72,7 +72,7 @@
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-10">
                 <div class="inline-block px-3 py-1 bg-yellow-400 text-blue-900 text-sm font-bold rounded-md mb-4">{{ $event->category->name ?? 'Event' }}</div>
                 <h1 class="text-4xl md:text-5xl font-extrabold text-white tracking-tight mb-2 shadow-sm">{{ $event->title }}</h1>
-                <p class="text-xl text-gray-300">{{ $event->organizer->profile->company_name ?? $event->organizer->name }}</p>
+                <p class="text-xl text-gray-300">{{ $event->organizer->organizerProfile->company_name ?? $event->organizer->name }}</p>
             </div>
         </div>
     </div>
@@ -174,8 +174,13 @@
                 <h3 class="text-xl font-bold text-gray-900">Checkout Simulation</h3>
                 <button @click="bookingModal = false" class="text-gray-400 hover:text-gray-600">&times;</button>
             </div>
-            
-            <form action="{{ route('attendee.book', $event->id) }}" method="POST" class="p-6 space-y-6">
+
+            <form
+                action="{{ route('attendee.book', $event->id) }}"
+                method="POST"
+                class="p-6 space-y-6"
+                onsubmit="return handleMidtransCheckout(event, this)"
+            >
                 @csrf
                 <input type="hidden" name="ticket_id" x-model="selectedTicket.id">
                 
@@ -198,13 +203,90 @@
                 </div>
 
                 <div class="pt-4 border-t border-gray-100 flex justify-between items-center">
-                    <span class="text-gray-500 text-sm italic">Simulated payment flow</span>
-                    <button type="submit" class="bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 transition shadow">
-                        Book Now
+                    <span class="text-gray-500 text-sm italic">
+                        {{ $midtransEnabled ? 'Pembayaran aman via Midtrans Snap' : 'Midtrans belum dikonfigurasi' }}
+                    </span>
+                    <button
+                        type="submit"
+                        class="bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 transition shadow disabled:opacity-60 disabled:cursor-not-allowed"
+                        :disabled="!selectedTicket"
+                    >
+                        Bayar Sekarang
                     </button>
                 </div>
             </form>
         </div>
     </div>
+
+    @if($midtransEnabled)
+        <script
+            type="text/javascript"
+            src="{{ $midtransSnapJsUrl }}"
+            data-client-key="{{ $midtransClientKey }}"
+        ></script>
+    @endif
+    <script>
+        async function handleMidtransCheckout(event, form) {
+            event.preventDefault();
+            const submitButton = form.querySelector('button[type="submit"]');
+            const originalLabel = submitButton ? submitButton.textContent : '';
+
+            if (!window.snap && {{ $midtransEnabled ? 'true' : 'false' }}) {
+                alert('Snap.js Midtrans belum termuat.');
+                return false;
+            }
+
+            if (submitButton) {
+                submitButton.disabled = true;
+                submitButton.textContent = 'Memproses...';
+            }
+
+            try {
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': form.querySelector('input[name="_token"]').value,
+                    },
+                    body: new FormData(form),
+                });
+
+                const payload = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(payload.message || 'Gagal membuat transaksi.');
+                }
+
+                if (!payload.snap_token) {
+                    window.location.href = payload.redirect_url || "{{ route('attendee.dashboard') }}";
+                    return false;
+                }
+
+                window.snap.pay(payload.snap_token, {
+                    onSuccess: function () {
+                        window.location.href = "{{ route('attendee.dashboard') }}";
+                    },
+                    onPending: function () {
+                        window.location.href = "{{ route('attendee.dashboard') }}";
+                    },
+                    onError: function () {
+                        alert('Pembayaran gagal diproses. Silakan coba lagi.');
+                    },
+                    onClose: function () {
+                        window.location.href = "{{ route('attendee.dashboard') }}";
+                    }
+                });
+            } catch (error) {
+                alert(error.message || 'Terjadi kesalahan saat memulai pembayaran.');
+            } finally {
+                if (submitButton) {
+                    submitButton.disabled = false;
+                    submitButton.textContent = originalLabel;
+                }
+            }
+
+            return false;
+        }
+    </script>
 </body>
 </html>
