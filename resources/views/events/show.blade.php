@@ -32,57 +32,47 @@
     </style>
 </head>
 <body class="antialiased bg-[#F4F6F9] text-gray-900 font-sans" x-data="{ bookingModal: false, selectedTicket: null }">
-
+    
     @auth
         @if(auth()->user()->role === 'attendee')
             <x-attendee-main-header />
-        @elseif(auth()->user()->role === 'organizer')
-            <x-organizer-main-header />
         @else
-            <nav class="bg-white border-b border-gray-200 sticky top-0 z-40">
-                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div class="flex justify-between items-center h-16">
-                        <a href="/" class="flex items-center gap-1 shrink-0">
+            <header class="bg-white border-b border-gray-200 sticky top-0 z-40">
+                <div class="max-w-[1400px] mx-auto px-6 h-[80px] flex items-center justify-between gap-6">
+                    <div class="flex items-center gap-8">
+                        <a href="{{ route('home') }}" class="flex items-center gap-1 shrink-0">
                             <x-application-logo class="h-10 w-auto" />
                         </a>
-                        <div class="flex items-center space-x-4">
-                            <a href="{{ url('/dashboard') }}" class="font-bold text-gray-600 hover:text-blue-600 transition">Dashboard</a>
-                        </div>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <a href="{{ url('/dashboard') }}" class="px-6 py-[10px] text-[14px] font-bold border border-primary text-primary rounded-lg hover:bg-primary/5 transition-colors">Dashboard</a>
                     </div>
                 </div>
             </header>
         @endif
     @else
-        <nav class="bg-white border-b border-gray-200 sticky top-0 z-40">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex justify-between items-center h-16">
-                    <a href="/" class="flex items-center gap-1 shrink-0">
+        <header class="bg-white border-b border-gray-200 sticky top-0 z-40">
+            <div class="max-w-[1400px] mx-auto px-6 h-[80px] flex items-center justify-between gap-6">
+                <div class="flex items-center gap-8">
+                    <a href="{{ route('home') }}" class="flex items-center gap-1 shrink-0">
                         <x-application-logo class="h-10 w-auto" />
                     </a>
-                    <div class="flex items-center space-x-4">
-                        <a href="{{ route('login') }}" class="font-bold text-gray-600 hover:text-blue-600 transition">Log in</a>
-                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <a href="{{ route('register') }}" class="px-6 py-[10px] text-[14px] font-bold border border-primary text-primary rounded-lg hover:bg-primary/5 transition-colors">Daftar</a>
+                    <a href="{{ route('login') }}" class="px-6 py-[10px] bg-primary text-white text-[14px] font-bold rounded-lg hover:bg-primary/90 transition-all shadow-sm">Masuk</a>
                 </div>
             </div>
         </header>
     @endauth
 
-    @php
-        $bannerUrl = 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80';
-
-        if (filled($event->banner_path)) {
-            if (\Illuminate\Support\Str::startsWith($event->banner_path, ['http://', 'https://'])) {
-                $bannerUrl = $event->banner_path;
-            } else {
-                $normalizedPath = ltrim(preg_replace('#^/?storage/#', '', $event->banner_path), '/');
-                $bannerUrl = asset('storage/' . $normalizedPath);
-            }
-        }
-    @endphp
-
     <!-- Event Hero -->
-    <div class="relative h-96 overflow-hidden bg-gray-900">
-        <img src="{{ $bannerUrl }}" alt="{{ $event->title }}" class="absolute inset-0 h-full w-full object-cover opacity-65">
+    <div class="relative bg-gray-900 h-96">
+        @if($event->banner_path)
+            <img src="{{ asset('storage/' . $event->banner_path) }}" class="w-full h-full object-cover opacity-60">
+        @else
+            <img src="https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80" class="w-full h-full object-cover opacity-60">
+        @endif
         <div class="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent"></div>
         <div class="absolute bottom-0 w-full">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-10">
@@ -96,10 +86,10 @@
     <!-- Main Content -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
-
+            
             <!-- Details Column -->
             <div class="lg:col-span-2 space-y-10">
-
+                
                 @if(session('success'))
                     <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded shadow-sm">
                         <p>{{ session('success') }}</p>
@@ -165,83 +155,33 @@
 
             <!-- Tickets Sticky Sidebar -->
             <div class="lg:col-span-1">
-                @auth
-                    @if(auth()->user()->role === 'organizer')
-                        <div class="sticky top-24 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
-                            <div class="bg-amber-500 p-6 text-white text-center">
-                                <h3 class="text-xl font-bold">Tidak bisa memesan tiket</h3>
-                                <p class="text-amber-50 mt-1 opacity-90 text-sm">Anda sedang login sebagai event organizer.</p>
-                            </div>
-                            <div class="p-6 space-y-4">
-                                <div class="rounded-xl border border-amber-100 bg-amber-50 p-4 text-sm text-amber-900">
-                                    Anda tidak dapat membeli tiket menggunakan akun organizer.
-                                </div>
-                                <a href="{{ route('organizer.events.index') }}" class="block w-full rounded-xl bg-slate-900 px-5 py-3 text-center text-sm font-bold text-white hover:bg-slate-800 transition">
-                                    Kelola Event Saya
-                                </a>
-                                <a href="{{ route('organizer.events.create') }}" class="block w-full rounded-xl border border-slate-200 px-5 py-3 text-center text-sm font-bold text-slate-700 hover:border-primary hover:text-primary transition">
-                                    Buat Event Baru
-                                </a>
-                            </div>
-                        </div>
-                    @else
-                        <div class="sticky top-24 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
-                            <div class="bg-blue-600 p-6 text-white text-center">
-                                <h3 class="text-xl font-bold">Select Tickets</h3>
-                                <p class="text-blue-100 mt-1 opacity-80 text-sm">Secure your spot before it sells out.</p>
-                            </div>
-                            <div class="p-6 space-y-4">
-                                @foreach($event->tickets as $ticket)
-                                    <div class="border rounded-xl p-4 {{ $ticket->available_qty > 0 ? 'border-gray-200 hover:border-blue-500 transition cursor-pointer' : 'border-gray-200 bg-gray-50 opacity-60' }}"
-                                         @if($ticket->available_qty > 0) @click="selectedTicket = {id: {{ $ticket->id }}, name: '{{ $ticket->name }}', price: {{ $ticket->price }}}; bookingModal = true;" @endif>
-                                        <div class="flex justify-between items-center mb-2">
-                                            <h4 class="font-bold text-lg text-gray-900">{{ $ticket->name }}</h4>
-                                            <span class="font-bold text-blue-600">
-                                                {{ $ticket->price > 0 ? 'Rp ' . number_format($ticket->price, 0, ',', '.') : 'FREE' }}
-                                            </span>
-                                        </div>
-                                        <div class="flex justify-between items-center text-sm">
-                                            <span class="text-gray-500">Available: {{ $ticket->available_qty }} / {{ $ticket->quota }}</span>
-                                            @if($ticket->available_qty == 0)
-                                                <span class="text-red-500 font-bold">SOLD OUT</span>
-                                            @else
-                                                <span class="text-green-500 font-bold">Available</span>
-                                            @endif
-                                        </div>
-                                    </div>
-                                @endforeach
-                            </div>
-                        </div>
-                    @endif
-                @else
-                    <div class="sticky top-24 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
-                        <div class="bg-blue-600 p-6 text-white text-center">
-                            <h3 class="text-xl font-bold">Select Tickets</h3>
-                            <p class="text-blue-100 mt-1 opacity-80 text-sm">Secure your spot before it sells out.</p>
-                        </div>
-                        <div class="p-6 space-y-4">
-                            @foreach($event->tickets as $ticket)
-                                <div class="border rounded-xl p-4 {{ $ticket->available_qty > 0 ? 'border-gray-200 hover:border-blue-500 transition cursor-pointer' : 'border-gray-200 bg-gray-50 opacity-60' }}"
-                                     @if($ticket->available_qty > 0) @click="selectedTicket = {id: {{ $ticket->id }}, name: '{{ $ticket->name }}', price: {{ $ticket->price }}}; bookingModal = true;" @endif>
-                                    <div class="flex justify-between items-center mb-2">
-                                        <h4 class="font-bold text-lg text-gray-900">{{ $ticket->name }}</h4>
-                                        <span class="font-bold text-blue-600">
-                                            {{ $ticket->price > 0 ? 'Rp ' . number_format($ticket->price, 0, ',', '.') : 'FREE' }}
-                                        </span>
-                                    </div>
-                                    <div class="flex justify-between items-center text-sm">
-                                        <span class="text-gray-500">Available: {{ $ticket->available_qty }} / {{ $ticket->quota }}</span>
-                                        @if($ticket->available_qty == 0)
-                                            <span class="text-red-500 font-bold">SOLD OUT</span>
-                                        @else
-                                            <span class="text-green-500 font-bold">Available</span>
-                                        @endif
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
+                <div class="sticky top-24 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+                    <div class="bg-blue-600 p-6 text-white text-center">
+                        <h3 class="text-xl font-bold">Select Tickets</h3>
+                        <p class="text-blue-100 mt-1 opacity-80 text-sm">Secure your spot before it sells out.</p>
                     </div>
-                @endauth
+                    <div class="p-6 space-y-4">
+                        @foreach($event->tickets as $ticket)
+                            <div class="border rounded-xl p-4 {{ $ticket->available_qty > 0 ? 'border-gray-200 hover:border-blue-500 transition cursor-pointer' : 'border-gray-200 bg-gray-50 opacity-60' }}"
+                                 @if($ticket->available_qty > 0) @click="selectedTicket = {id: {{ $ticket->id }}, name: '{{ $ticket->name }}', price: {{ $ticket->price }}}; bookingModal = true;" @endif>
+                                <div class="flex justify-between items-center mb-2">
+                                    <h4 class="font-bold text-lg text-gray-900">{{ $ticket->name }}</h4>
+                                    <span class="font-bold text-blue-600">
+                                        {{ $ticket->price > 0 ? 'Rp ' . number_format($ticket->price, 0, ',', '.') : 'FREE' }}
+                                    </span>
+                                </div>
+                                <div class="flex justify-between items-center text-sm">
+                                    <span class="text-gray-500">Available: {{ $ticket->available_qty }} / {{ $ticket->quota }}</span>
+                                    @if($ticket->available_qty == 0)
+                                        <span class="text-red-500 font-bold">SOLD OUT</span>
+                                    @else
+                                        <span class="text-green-500 font-bold">Available</span>
+                                    @endif
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
             </div>
 
         </div>
@@ -251,10 +191,10 @@
     <div x-cloak x-show="bookingModal" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900 bg-opacity-50 backdrop-blur-sm"
         x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
         x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
-
+        
         <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden" @click.away="bookingModal = false" x-show="bookingModal"
             x-transition:enter="transition ease-out duration-300 transform" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0">
-
+            
             <div class="bg-gray-50 p-6 border-b flex justify-between items-center">
                 <h3 class="text-xl font-bold text-gray-900">Checkout Simulation</h3>
                 <button @click="bookingModal = false" class="text-gray-400 hover:text-gray-600">&times;</button>
@@ -268,7 +208,7 @@
             >
                 @csrf
                 <input type="hidden" name="ticket_id" x-model="selectedTicket.id">
-
+                
                 <div class="flex justify-between items-center bg-blue-50 p-4 rounded-lg">
                     <div>
                         <p class="text-sm text-blue-800 opacity-80">Selected Ticket</p>
