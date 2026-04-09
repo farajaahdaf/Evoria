@@ -37,10 +37,12 @@
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
     </style>
 </head>
-<body class="bg-[#F4F6F9] min-h-screen text-slate-900">
+<body class="bg-[#F4F6F9] min-h-screen text-slate-900" x-data="{ chatbotOpen: false }">
 
     @if(auth()->check() && auth()->user()->role === 'attendee')
         <x-attendee-main-header />
+    @elseif(auth()->check() && auth()->user()->role === 'organizer')
+        <x-organizer-main-header />
     @else
         <!-- Navigasi Atas (header utama default dengan Buat Event / Daftar / Masuk) -->
         <header class="bg-white border-b border-gray-200">
@@ -264,6 +266,133 @@
             </div>
         </div>
     </footer>
+
+    <!-- Chatbot FAB -->
+    <div class="fixed bottom-8 right-8 z-[60] fab-container">
+        <div class="fab-tooltip absolute top-1/2 left-0 -translate-y-1/2 opacity-0 pointer-events-none transition-all duration-300 ease-out whitespace-nowrap bg-slate-900 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-xl">
+            Tanya Evoria AI
+        </div>
+        <button @click="chatbotOpen = !chatbotOpen" class="size-16 bg-gradient-to-tr from-primary to-[#4F46E5] text-white rounded-[24px] flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-all duration-200 group relative">
+            <span x-show="!chatbotOpen" class="material-symbols-outlined text-3xl transition-transform group-hover:rotate-12">smart_toy</span>
+            <span x-cloak x-show="chatbotOpen" class="material-symbols-outlined text-3xl transition-transform">close</span>
+            <div class="absolute inset-0 rounded-[24px] bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+        </button>
+    </div>
+
+    <!-- AI Chatbot Popover Panel -->
+    <div x-cloak x-show="chatbotOpen" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-8 scale-95" x-transition:enter-end="opacity-100 translate-y-0 scale-100" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 scale-100" x-transition:leave-end="opacity-0 translate-y-8 scale-95" class="fixed bottom-28 right-8 w-[380px] h-[550px] bg-white rounded-[24px] shadow-2xl border border-slate-100 flex flex-col z-[55] overflow-hidden" x-data="chatBox()">
+        <div class="bg-gradient-to-r from-primary to-[#4F46E5] p-5 text-white flex items-center gap-3">
+            <div class="size-10 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center">
+                <span class="material-symbols-outlined text-white">robot_2</span>
+            </div>
+            <div>
+                <h4 class="font-extrabold text-base leading-tight">Evoria AI Assistant</h4>
+                <p class="text-white/80 text-xs">Asisten tiket cerdas Anda</p>
+            </div>
+        </div>
+        
+        <div class="flex-1 bg-slate-50 p-5 overflow-y-auto space-y-5" id="chat-messages">
+            <div class="flex gap-2">
+                <div class="size-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                    <span class="material-symbols-outlined text-primary text-sm">smart_toy</span>
+                </div>
+                <div class="bg-white border border-slate-100 text-slate-700 rounded-2xl rounded-tl-sm px-4 py-3 max-w-[85%] shadow-sm text-sm">
+                    Halo! Saya Evoria AI. Coba beri perintah seperti <strong>"Cariin konser musik gratis bulan ini dong!"</strong>
+                </div>
+            </div>
+            
+            <template x-for="message in messages">
+                <div :class="message.role === 'user' ? 'flex justify-end' : 'flex gap-2'">
+                    <template x-if="message.role === 'assistant'">
+                        <div class="size-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                            <span class="material-symbols-outlined text-primary text-sm">smart_toy</span>
+                        </div>
+                    </template>
+                    
+                    <div :class="message.role === 'user' ? 'bg-primary text-white rounded-tr-sm' : 'bg-white border border-slate-100 text-slate-700 rounded-tl-sm prose prose-sm max-w-none prose-a:text-primary prose-a:font-bold prose-strong:text-slate-900'" 
+                         class="rounded-2xl px-4 py-3 max-w-[85%] shadow-sm text-sm" x-html="formatMessage(message.content)">
+                    </div>
+                </div>
+            </template>
+
+            <div class="flex gap-2" x-show="loading">
+                <div class="size-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                    <span class="material-symbols-outlined text-primary text-sm">smart_toy</span>
+                </div>
+                <div class="bg-white border border-slate-100 text-slate-700 rounded-2xl rounded-tl-sm px-4 py-4 max-w-[85%] shadow-sm flex items-center gap-1.5 h-10">
+                    <div class="size-1.5 bg-slate-400 rounded-full animate-bounce"></div>
+                    <div class="size-1.5 bg-slate-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
+                    <div class="size-1.5 bg-slate-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-4 border-t border-slate-100 bg-white">
+            <form @submit.prevent="sendMessage" class="relative">
+                <input type="text" x-model="newMessage" placeholder="Ketik pencarian Anda..." class="w-full h-12 bg-slate-100 border-none rounded-full pl-5 pr-14 focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm text-slate-700 placeholder:text-slate-400">
+                <button type="submit" :disabled="loading || !newMessage.trim()" class="absolute right-1 top-1 size-10 bg-primary text-white rounded-full flex items-center justify-center hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:bg-slate-300">
+                    <span class="material-symbols-outlined text-[20px] ml-0.5">send</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('chatBox', () => ({
+                messages: [],
+                newMessage: '',
+                loading: false,
+                
+                async sendMessage() {
+                    if (!this.newMessage.trim() || this.loading) return;
+                    
+                    let msg = { role: 'user', content: this.newMessage };
+                    this.messages.push(msg);
+                    let prompt = this.newMessage;
+                    this.newMessage = '';
+                    this.loading = true;
+                    
+                    this.scrollToBottom();
+
+                    try {
+                        const res = await fetch('/chat', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                            },
+                            body: JSON.stringify({ prompt: prompt })
+                        });
+                        const data = await res.json();
+                        
+                        this.messages.push({ role: 'assistant', content: data.response });
+                    } catch(e) {
+                        this.messages.push({ role: 'assistant', content: "Momen sibuk, koneksi AI terputus. Coba lagi." });
+                    } finally {
+                        this.loading = false;
+                        this.scrollToBottom();
+                    }
+                },
+                
+                scrollToBottom() {
+                    setTimeout(() => {
+                        const container = document.getElementById('chat-messages');
+                        container.scrollTop = container.scrollHeight;
+                    }, 100);
+                },
+
+                formatMessage(text) {
+                    if (!text) return '';
+                    let html = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                    html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-primary hover:underline font-bold">$1</a>');
+                    html = html.replace(/\n/g, '<br>');
+                    return html;
+                }
+            }));
+        });
+    </script>
 
 </body>
 </html>
