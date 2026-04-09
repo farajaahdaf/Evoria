@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ $event->title }} - Evoria</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -126,6 +127,25 @@
                         </div>
                     </div>
                 </section>
+
+                @if($event->latitude && $event->longitude)
+                    <section>
+                        <div class="flex items-center justify-between gap-4 mb-4 border-b pb-2">
+                            <h2 class="text-2xl font-bold text-gray-900">Event Map</h2>
+                            <a
+                                href="https://www.google.com/maps/search/?api=1&query={{ $event->latitude }},{{ $event->longitude }}"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                class="inline-flex items-center rounded-full border border-blue-200 px-4 py-2 text-sm font-bold text-blue-600 transition hover:bg-blue-50"
+                            >
+                                Buka di Google Maps
+                            </a>
+                        </div>
+                        <div class="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+                            <div id="event-map" class="h-[360px] w-full"></div>
+                        </div>
+                    </section>
+                @endif
             </div>
 
             <!-- Tickets Sticky Sidebar -->
@@ -225,7 +245,54 @@
             data-client-key="{{ $midtransClientKey }}"
         ></script>
     @endif
+    @if($googleMapsWebApiKey && $event->latitude && $event->longitude)
+        <script
+            async
+            defer
+            src="https://maps.googleapis.com/maps/api/js?key={{ $googleMapsWebApiKey }}"
+        ></script>
+    @endif
     <script>
+        @if($googleMapsWebApiKey && $event->latitude && $event->longitude)
+        document.addEventListener('DOMContentLoaded', function () {
+            const initMap = () => {
+                if (!window.google || !window.google.maps) {
+                    return;
+                }
+
+                const location = {
+                    lat: {{ (float) $event->latitude }},
+                    lng: {{ (float) $event->longitude }},
+                };
+
+                const map = new google.maps.Map(document.getElementById('event-map'), {
+                    center: location,
+                    zoom: 15,
+                    mapTypeControl: false,
+                    streetViewControl: false,
+                    fullscreenControl: false,
+                });
+
+                new google.maps.Marker({
+                    position: location,
+                    map,
+                    title: @json($event->title),
+                });
+            };
+
+            const waitForGoogleMaps = () => {
+                if (window.google && window.google.maps) {
+                    initMap();
+                    return;
+                }
+
+                window.setTimeout(waitForGoogleMaps, 150);
+            };
+
+            waitForGoogleMaps();
+        });
+        @endif
+
         async function handleMidtransCheckout(event, form) {
             event.preventDefault();
             const submitButton = form.querySelector('button[type="submit"]');
