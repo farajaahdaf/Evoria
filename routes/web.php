@@ -13,7 +13,7 @@ Route::get('/', function () {
     return view('welcome', compact('events', 'categories'));
 })->name('home');
 
-Route::get('/kategori/{slug}', function ($slug) {
+Route::get('/kategori/{slug}', function (\Illuminate\Http\Request $request, $slug) {
     // Cari berdasarkan slug, jika tidak ada fallback ke pencarian nama
     $category = \App\Models\EventCategory::where('slug', $slug)->first();
 
@@ -21,13 +21,32 @@ Route::get('/kategori/{slug}', function ($slug) {
         $category = \App\Models\EventCategory::whereRaw('LOWER(name) LIKE ?', ['%' . strtolower(str_replace('-', ' ', $slug)) . '%'])->first();
     }
 
-    $events = \App\Models\Event::with('tickets', 'organizer')
+    $sort = $request->query('sort', 'latest'); // latest | price_asc | price_desc
+
+    $query = \App\Models\Event::with('tickets', 'organizer')
                 ->where('category_id', optional($category)->id)
-                ->where('status', 'published')
-                ->latest()
-                ->paginate(6);
+                ->where('status', 'published');
+
+    if ($sort === 'price_asc' || $sort === 'price_desc') {
+        // Join dengan subquery untuk mendapatkan harga minimum tiket
+        $query->leftJoinSub(
+            \DB::table('tickets')
+                ->select('event_id', \DB::raw('MIN(price) as min_price'))
+                ->groupBy('event_id'),
+            'ticket_prices',
+            'events.id',
+            '=',
+            'ticket_prices.event_id'
+        )
+        ->select('events.*', \DB::raw('COALESCE(ticket_prices.min_price, 0) as min_price'))
+        ->orderBy('min_price', $sort === 'price_asc' ? 'asc' : 'desc');
+    } else {
+        $query->latest();
+    }
+
+    $events = $query->paginate(6)->appends(['sort' => $sort]);
                 
-    return view('categories.show', compact('category', 'events'));
+    return view('categories.show', compact('category', 'events', 'sort'));
 })->name('category.show');
 
 Route::get('/event/{slug}', function ($slug) {

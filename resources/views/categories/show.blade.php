@@ -105,6 +105,42 @@
             </p>
         </section>
 
+        <!-- Filter Bar -->
+        <section>
+            @php
+                $currentSort = $sort ?? 'latest';
+                $filterOptions = [
+                    'latest'     => ['label' => 'Terbaru',         'icon' => 'schedule'],
+                    'price_desc' => ['label' => 'Harga Tertinggi', 'icon' => 'arrow_upward'],
+                    'price_asc'  => ['label' => 'Harga Terendah',  'icon' => 'arrow_downward'],
+                ];
+            @endphp
+            <div class="flex items-center gap-3 flex-wrap">
+                <span class="text-[13px] font-bold text-slate-500 mr-1">Urutkan:</span>
+                @foreach($filterOptions as $value => $option)
+                    @php
+                        $isActive = $currentSort === $value;
+                    @endphp
+                    <a href="{{ request()->fullUrlWithQuery(['sort' => $value]) }}"
+                       class="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-[13px] font-bold border transition-all duration-200
+                              {{ $isActive
+                                  ? 'bg-[#2563EB] text-white border-[#2563EB] shadow-md shadow-blue-200'
+                                  : 'bg-white text-slate-600 border-slate-200 hover:border-[#2563EB] hover:text-[#2563EB]' }}">
+                        <span class="material-symbols-outlined text-[15px]">{{ $option['icon'] }}</span>
+                        {{ $option['label'] }}
+                    </a>
+                @endforeach
+
+                @if($currentSort !== 'latest')
+                    <a href="{{ request()->fullUrlWithQuery(['sort' => 'latest']) }}"
+                       class="inline-flex items-center gap-1 px-3 py-2 rounded-full text-[12px] font-bold text-slate-400 hover:text-red-500 border border-transparent hover:border-red-200 transition-all duration-200 ml-1">
+                        <span class="material-symbols-outlined text-[14px]">close</span>
+                        Reset
+                    </a>
+                @endif
+            </div>
+        </section>
+
         <!-- Events Grid -->
         <section>
             @php
