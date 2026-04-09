@@ -88,12 +88,40 @@
 
                                     <div class="space-y-2">
                                         <label for="location_name" class="text-sm font-semibold text-slate-700">Nama Tempat / Venue</label>
-                                        <input id="location_name" name="location_name" type="text" value="{{ old('location_name') }}" required placeholder="e.g. Jakarta Convention Center" class="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-primary focus:ring-4 focus:ring-blue-100">
+                                        <input id="location_name" name="location_name" type="text" value="{{ old('location_name') }}" required placeholder="Contoh: Jakarta Convention Center" class="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-primary focus:ring-4 focus:ring-blue-100">
+                                        <p class="text-xs text-slate-500">Mulai ketik nama gedung, venue, atau tempat. Pilih saran Google Maps agar alamat dan koordinat terisi otomatis.</p>
                                     </div>
                                     
                                     <div class="space-y-2">
                                         <label for="address" class="text-sm font-semibold text-slate-700">Alamat Lengkap</label>
-                                        <textarea id="address" name="address" rows="2" required class="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-primary focus:ring-4 focus:ring-blue-100">{{ old('address') }}</textarea>
+                                        <textarea id="address" name="address" rows="2" class="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-primary focus:ring-4 focus:ring-blue-100">{{ old('address') }}</textarea>
+                                    </div>
+
+                                    <div class="space-y-4">
+                                        <div class="flex items-center justify-between gap-4">
+                                            <div>
+                                                <label class="text-sm font-semibold text-slate-700">Lokasi di Peta</label>
+                                                <p class="mt-1 text-xs text-slate-500">Cari venue lewat Google Maps atau klik langsung pada peta untuk menentukan titik event.</p>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                @click="resetMapPosition()"
+                                                class="rounded-full border border-slate-200 px-4 py-2 text-xs font-bold text-slate-600 transition hover:border-primary hover:text-primary"
+                                            >
+                                                Reset Peta
+                                            </button>
+                                        </div>
+
+                                        <div id="event-location-map" class="h-80 w-full rounded-3xl border border-slate-200 bg-slate-100"></div>
+
+                                        <input id="latitude" name="latitude" type="hidden" x-model="latitude">
+                                        <input id="longitude" name="longitude" type="hidden" x-model="longitude">
+
+                                        <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-600">
+                                            <span class="font-bold text-slate-700">Koordinat tersimpan otomatis:</span>
+                                            <span x-text="latitude || '-'"></span>,
+                                            <span x-text="longitude || '-'"></span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -247,9 +275,107 @@
         document.addEventListener('alpine:init', () => {
             Alpine.data('eventForm', () => ({
                 step: 1,
+                latitude: '{{ old('latitude', config('services.google_maps.default_lat')) }}',
+                longitude: '{{ old('longitude', config('services.google_maps.default_lng')) }}',
+                defaultLat: {{ (float) config('services.google_maps.default_lat') }},
+                defaultLng: {{ (float) config('services.google_maps.default_lng') }},
+                defaultZoom: {{ (int) config('services.google_maps.default_zoom') }},
+                map: null,
+                marker: null,
+                autocomplete: null,
                 tickets: [
                     { id: Date.now(), name: '', price: '', quota: '' }
                 ],
+                init() {
+                    this.waitForGoogleMaps();
+                },
+                waitForGoogleMaps() {
+                    if (window.google && window.google.maps) {
+                        this.$nextTick(() => {
+                            this.initMap();
+                            this.initAutocomplete();
+                        });
+                        return;
+                    }
+
+                    window.setTimeout(() => this.waitForGoogleMaps(), 150);
+                },
+                initMap() {
+                    const lat = parseFloat(this.latitude) || this.defaultLat;
+                    const lng = parseFloat(this.longitude) || this.defaultLng;
+                    const center = { lat, lng };
+
+                    this.map = new google.maps.Map(document.getElementById('event-location-map'), {
+                        center,
+                        zoom: this.defaultZoom,
+                        mapTypeControl: false,
+                        streetViewControl: false,
+                        fullscreenControl: false,
+                    });
+
+                    this.marker = new google.maps.Marker({
+                        position: center,
+                        map: this.map,
+                        draggable: true,
+                    });
+
+                    this.updateCoordinates(lat, lng);
+
+                    this.map.addListener('click', (event) => {
+                        this.setMarkerPosition(event.latLng);
+                    });
+
+                    this.marker.addListener('dragend', (event) => {
+                        this.setMarkerPosition(event.latLng);
+                    });
+                },
+                initAutocomplete() {
+                    const input = document.getElementById('location_name');
+
+                    if (!input || !google.maps.places) {
+                        return;
+                    }
+
+                    this.autocomplete = new google.maps.places.Autocomplete(input, {
+                        fields: ['geometry', 'formatted_address', 'name'],
+                    });
+
+                    this.autocomplete.addListener('place_changed', () => {
+                        const place = this.autocomplete.getPlace();
+
+                        if (!place.geometry || !place.geometry.location) {
+                            return;
+                        }
+
+                        document.getElementById('location_name').value = place.name || document.getElementById('location_name').value;
+                        document.getElementById('address').value = place.formatted_address || document.getElementById('address').value;
+
+                        this.setMarkerPosition(place.geometry.location, true);
+                    });
+                },
+                setMarkerPosition(location, panMap = false) {
+                    const lat = typeof location.lat === 'function' ? location.lat() : location.lat;
+                    const lng = typeof location.lng === 'function' ? location.lng() : location.lng;
+
+                    this.marker.setPosition({ lat, lng });
+                    this.updateCoordinates(lat, lng);
+
+                    if (panMap && this.map) {
+                        this.map.panTo({ lat, lng });
+                        this.map.setZoom(Math.max(this.map.getZoom(), 15));
+                    }
+                },
+                updateCoordinates(lat, lng) {
+                    this.latitude = Number(lat).toFixed(8);
+                    this.longitude = Number(lng).toFixed(8);
+                },
+                resetMapPosition() {
+                    if (!this.map || !this.marker) {
+                        return;
+                    }
+
+                    this.setMarkerPosition({ lat: this.defaultLat, lng: this.defaultLng }, true);
+                },
                 addTicket() {
                     this.tickets.push({ id: Date.now(), name: '', price: '', quota: '' });
                 },
@@ -277,6 +403,13 @@
             }))
         })
     </script>
+    @if(config('services.google_maps.web_api_key'))
+    <script
+        async
+        defer
+        src="https://maps.googleapis.com/maps/api/js?key={{ config('services.google_maps.web_api_key') }}&libraries=places"
+    ></script>
+    @endif
     <style>
         [x-cloak] { display: none !important; }
         ::-webkit-scrollbar { width: 6px; }

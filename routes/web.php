@@ -37,6 +37,7 @@ Route::get('/event/{slug}', function ($slug) {
         'midtransClientKey' => config('services.midtrans.client_key'),
         'midtransSnapJsUrl' => app(\App\Services\MidtransService::class)->getSnapJsUrl(),
         'midtransEnabled' => app(\App\Services\MidtransService::class)->isConfigured(),
+        'googleMapsWebApiKey' => config('services.google_maps.web_api_key'),
     ]);
 })->name('events.show');
 Route::post('/chat', [\App\Http\Controllers\ChatbotController::class, 'chat'])->name('chat');

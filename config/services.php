@@ -42,4 +42,13 @@ return [
         'is_production' => env('MIDTRANS_IS_PRODUCTION', false),
     ],
 
+    'google_maps' => [
+        'web_api_key' => env('GOOGLE_MAPS_WEB_API_KEY'),
+        'server_api_key' => env('GOOGLE_MAPS_SERVER_API_KEY'),
+        'android_api_key' => env('GOOGLE_MAPS_ANDROID_API_KEY'),
+        'default_lat' => env('GOOGLE_MAPS_DEFAULT_LAT', -0.02633000),
+        'default_lng' => env('GOOGLE_MAPS_DEFAULT_LNG', 109.34250000),
+        'default_zoom' => env('GOOGLE_MAPS_DEFAULT_ZOOM', 13),
+    ],
+
 ];

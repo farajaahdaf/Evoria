@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\Organizer;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\Event;
 use App\Models\EventCategory;
-use Illuminate\Support\Str;
+use App\Services\GoogleMapsService;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class EventController extends Controller
 {
@@ -23,9 +25,9 @@ class EventController extends Controller
         return view('organizer.events.create', compact('categories'));
     }
 
-    public function store(Request $request)
+    public function store(Request $request, GoogleMapsService $googleMaps)
     {
-        $request->validate([
+        $validated = $request->validate([
             'title' => 'required|string|max:255',
             'category_id' => 'required|exists:event_categories,id',
             'banner' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
@@ -33,7 +35,9 @@ class EventController extends Controller
             'start_time' => 'required|date|after:now',
             'end_time' => 'required|date|after:start_time',
             'location_name' => 'required|string|max:255',
-            'address' => 'required|string',
+            'address' => 'nullable|string',
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180',
             'tickets' => 'required|array|min:1',
             'tickets.*.name' => 'required|string|max:255',
             'tickets.*.price' => 'required|numeric|min:0',
@@ -41,6 +45,27 @@ class EventController extends Controller
             'portfolio' => 'nullable|file|mimes:pdf,jpeg,png,jpg|max:5120',
             'proposal' => 'nullable|file|mimes:pdf|max:10240',
         ]);
+
+        if (blank($validated['latitude'] ?? null) || blank($validated['longitude'] ?? null)) {
+            $query = trim(($validated['location_name'] ?? '') . ' ' . ($validated['address'] ?? ''));
+            $geocoded = $googleMaps->geocode($query);
+
+            if (! $geocoded || blank($geocoded['latitude']) || blank($geocoded['longitude'])) {
+                throw ValidationException::withMessages([
+                    'location_name' => 'Lokasi tidak berhasil dikenali. Pilih lokasi dari saran Google Maps atau isi nama lokasi yang lebih spesifik.',
+                ]);
+            }
+
+            $validated['latitude'] = $geocoded['latitude'];
+            $validated['longitude'] = $geocoded['longitude'];
+            $validated['address'] = $validated['address'] ?: ($geocoded['address'] ?? null);
+        }
+
+        if (blank($validated['address'] ?? null)) {
+            throw ValidationException::withMessages([
+                'address' => 'Alamat lokasi belum terisi. Pilih hasil lokasi dari Google Maps agar alamat terisi otomatis.',
+            ]);
+        }
 
         $bannerPath = null;
         if ($request->hasFile('banner')) {
@@ -57,23 +82,25 @@ class EventController extends Controller
             $proposalPath = $request->file('proposal')->store('events/proposals', 'public');
         }
 
-        DB::transaction(function () use ($request, $bannerPath, $portfolioPath, $proposalPath) {
+        DB::transaction(function () use ($request, $validated, $bannerPath, $portfolioPath, $proposalPath) {
             $event = $request->user()->events()->create([
-                'category_id' => $request->category_id,
-                'title' => $request->title,
-                'slug' => Str::slug($request->title) . '-' . uniqid(),
+                'category_id' => $validated['category_id'],
+                'title' => $validated['title'],
+                'slug' => Str::slug($validated['title']) . '-' . uniqid(),
                 'banner_path' => $bannerPath,
                 'portfolio_path' => $portfolioPath,
                 'proposal_path' => $proposalPath,
-                'description' => $request->description,
-                'start_time' => $request->start_time,
-                'end_time' => $request->end_time,
-                'location_name' => $request->location_name,
-                'address' => $request->address,
+                'description' => $validated['description'],
+                'start_time' => $validated['start_time'],
+                'end_time' => $validated['end_time'],
+                'location_name' => $validated['location_name'],
+                'address' => $validated['address'],
+                'latitude' => $validated['latitude'],
+                'longitude' => $validated['longitude'],
                 'status' => 'pending_review',
             ]);
 
-            foreach ($request->tickets as $ticketData) {
+            foreach ($validated['tickets'] as $ticketData) {
                 $event->tickets()->create([
                     'name' => $ticketData['name'],
                     'price' => $ticketData['price'],
