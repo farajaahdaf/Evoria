@@ -29,7 +29,7 @@ class EventSeeder extends Seeder
             [
                 'organizer_email' => 'organizer@example.com',
                 'category' => 'Music Concert',
-                'title' => 'RIIZE - 2026 RIIZE Concert Tour [RIIZING LOUD]',
+                'title' => 'RIIZE - 2026 RIIZE Concert Tour',
                 'banner_path' => 'https://images.unsplash.com/photo-1507874457470-272b3c8d8ee2?auto=format&fit=crop&w=1600&q=80',
                 'description' => 'Konser RIIZE di Indonesia sebagai bagian dari tur 2026 RIIZING LOUD dengan panggung skala arena dan penampilan lagu-lagu andalan mereka.',
                 'start_time' => Carbon::create(2026, 1, 10, 19, 0),
