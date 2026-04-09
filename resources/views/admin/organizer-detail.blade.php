@@ -33,18 +33,20 @@
                     </p>
                 </div>
                 <div class="flex flex-wrap gap-4">
-                    <a href="#documents" class="inline-flex items-center px-6 py-4 bg-white border border-slate-200 text-indigo-600 rounded-xl font-bold hover:bg-slate-50 transition shadow-sm">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                        Review Files
-                    </a>
                     @if($organizer->status === 'pending')
-                    <form action="{{ route('admin.organizers.verify', $organizer->id) }}" method="POST">
-                        @csrf
-                        <button type="submit" class="inline-flex items-center px-8 py-4 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition shadow-lg shadow-indigo-100 transform hover:-translate-y-0.5">
-                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
-                            Verify & Approve
+                    <div class="flex gap-4">
+                        <button type="button" x-data="" x-on:click.prevent="$dispatch('open-modal', 'confirm-rejection')" class="inline-flex items-center px-8 py-4 bg-white border border-red-200 text-red-600 rounded-xl font-bold hover:bg-red-50 transition shadow-sm transform hover:-translate-y-0.5">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                            Reject
                         </button>
-                    </form>
+                        <form action="{{ route('admin.organizers.verify', $organizer->id) }}" method="POST">
+                            @csrf
+                            <button type="submit" class="inline-flex items-center px-8 py-4 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition shadow-lg shadow-indigo-100 transform hover:-translate-y-0.5">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                                Verify & Approve
+                            </button>
+                        </form>
+                    </div>
                     @endif
                 </div>
             </div>
@@ -122,10 +124,6 @@
                                 <span class="text-xs font-bold text-slate-700">0 Projects</span>
                             </div>
                         </div>
-
-                        <a href="{{ $organizer->portfolio_path ? Storage::url($organizer->portfolio_path) : '#' }}" target="_blank" class="text-indigo-600 font-bold hover:text-indigo-800 transition underline underline-offset-8 decoration-2">
-                            View Portfolio
-                        </a>
                     </div>
                 </div>
             </div>
@@ -174,10 +172,12 @@
                                 </div>
                                 <div>
                                     <h5 class="font-bold text-slate-800">Company_Portfolio.pdf</h5>
-                                    <p class="text-xs text-slate-400 font-medium">5.2 MB • {{ $organizer->updated_at->diffForHumans() }}</p>
+                                    @if($organizer->portfolio_path && Storage::disk('public')->exists($organizer->portfolio_path))
+                                        <p class="text-xs text-slate-400 font-medium">{{ round(Storage::disk('public')->size($organizer->portfolio_path) / 1024 / 1024, 1) }} MB • {{ $organizer->updated_at->diffForHumans() }}</p>
+                                    @endif
                                 </div>
                             </div>
-                            @if($organizer->portfolio_path)
+                            @if($organizer->portfolio_path && Storage::disk('public')->exists($organizer->portfolio_path))
                             <a href="{{ Storage::url($organizer->portfolio_path) }}" target="_blank" class="p-2 text-slate-400 hover:text-indigo-600 transition">
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
                             </a>
@@ -194,10 +194,12 @@
                                 </div>
                                 <div>
                                     <h5 class="font-bold text-slate-800">Registration_Proposal.pdf</h5>
-                                    <p class="text-xs text-slate-400 font-medium">1.2 MB • {{ $organizer->updated_at->diffForHumans() }}</p>
+                                    @if($organizer->proposal_path && Storage::disk('public')->exists($organizer->proposal_path))
+                                        <p class="text-xs text-slate-400 font-medium">{{ round(Storage::disk('public')->size($organizer->proposal_path) / 1024 / 1024, 1) }} MB • {{ $organizer->updated_at->diffForHumans() }}</p>
+                                    @endif
                                 </div>
                             </div>
-                            @if($organizer->proposal_path)
+                            @if($organizer->proposal_path && Storage::disk('public')->exists($organizer->proposal_path))
                             <a href="{{ Storage::url($organizer->proposal_path) }}" target="_blank" class="p-2 text-slate-400 hover:text-indigo-600 transition">
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
                             </a>
@@ -205,27 +207,18 @@
                             <span class="text-xs font-bold text-red-400 italic">Missing</span>
                             @endif
                         </div>
-
-                        <!-- Add Manifest Placeholder -->
-                        <button class="w-full flex items-center justify-center p-5 bg-white border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 font-bold hover:border-indigo-300 hover:text-indigo-500 transition space-x-2">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
-                            <span>ADD MANIFEST</span>
-                        </button>
                     </div>
                 </div>
             </div>
 
             <!-- Bottom: Process Log -->
-            <div class="bg-white rounded-3xl p-8 shadow-sm border border-slate-100">
+            <div class="bg-white rounded-3xl p-8 shadow-sm border border-slate-100 mb-8">
                 <div class="flex items-center justify-between mb-10">
                     <h3 class="text-xs font-bold tracking-widest text-indigo-500 uppercase">Process Log</h3>
                 </div>
-
+                <!-- ... (log content) ... -->
                 <div class="space-y-10 relative">
-                    <!-- Vertical Line -->
                     <div class="absolute left-1.5 top-2 bottom-2 w-0.5 bg-slate-100"></div>
-
-                    <!-- Step 1 -->
                     <div class="relative flex items-start space-x-6">
                         <div class="w-3.5 h-3.5 rounded-full bg-indigo-600 ring-4 ring-indigo-50 z-10 mt-1.5"></div>
                         <div class="flex-1">
@@ -236,8 +229,6 @@
                             <p class="text-slate-500 font-medium">Candidate "{{ $organizer->user->name }}" submitted registration for company "{{ $organizer->company_name }}".</p>
                         </div>
                     </div>
-
-                    <!-- Step 2 -->
                     <div class="relative flex items-start space-x-6">
                         <div class="w-3.5 h-3.5 rounded-full bg-slate-300 z-10 mt-1.5"></div>
                         <div class="flex-1">
@@ -250,6 +241,38 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Rejection Confirmation Modal -->
+            <x-modal name="confirm-rejection" focusable>
+                <div class="p-8">
+                    <div class="flex items-center justify-center w-16 h-16 mx-auto mb-6 bg-red-100 rounded-2xl">
+                        <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                        </svg>
+                    </div>
+                    
+                    <h2 class="text-2xl font-bold text-center text-slate-900 mb-2">
+                        Reject Application?
+                    </h2>
+                    
+                    <p class="text-center text-slate-500 font-medium mb-10 leading-relaxed">
+                        Are you sure you want to reject this application? This action will notify the applicant and they will remain as a regular attendee.
+                    </p>
+                    
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <button type="button" x-on:click="$dispatch('close')" class="flex-1 px-6 py-4 bg-slate-100 text-slate-600 rounded-2xl font-bold hover:bg-slate-200 transition">
+                            Cancel, Keep Reviewing
+                        </button>
+                        
+                        <form action="{{ route('admin.organizers.reject', $organizer->id) }}" method="POST" class="flex-1">
+                            @csrf
+                            <button type="submit" class="w-full px-6 py-4 bg-red-600 text-white rounded-2xl font-bold hover:bg-red-700 transition shadow-lg shadow-red-100">
+                                Yes, Reject Application
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </x-modal>
         </div>
     </div>
 </x-app-layout>

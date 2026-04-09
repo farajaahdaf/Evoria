@@ -33,7 +33,15 @@ class AdminController extends Controller
         $profile = \App\Models\OrganizerProfile::findOrFail($id);
         $profile->update(['status' => 'verified']);
         $profile->user?->update(['role' => 'organizer']);
-        return back()->with('success', 'Organizer verified successfully.');
+        return redirect()->route('admin.organizers')->with('success', 'Organizer verified successfully.');
+    }
+
+    public function rejectOrganizer(Request $request, $id)
+    {
+        $profile = \App\Models\OrganizerProfile::findOrFail($id);
+        $profile->update(['status' => 'rejected']);
+        $profile->user?->update(['role' => 'attendee']);
+        return redirect()->route('admin.organizers')->with('success', 'Organizer application rejected.');
     }
 
     public function approveEvents()
