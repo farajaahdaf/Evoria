@@ -3,6 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Tiket Saya - {{ config('app.name', 'Evoria') }}</title>
 
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
@@ -108,7 +109,7 @@
                                         <button
                                             type="button"
                                             class="inline-flex items-center rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-white hover:bg-primary/90 transition-colors"
-                                            onclick="payPendingOrder('{{ $order->snap_token }}')"
+                                            onclick="payPendingOrder('{{ $order->snap_token }}', {{ $order->id }})"
                                         >
                                             Lanjutkan Pembayaran
                                         </button>
@@ -141,23 +142,42 @@
             data-client-key="{{ $midtransClientKey }}"
         ></script>
         <script>
-            function payPendingOrder(snapToken) {
+            async function syncOrderStatus(orderId) {
+                if (!orderId) return;
+
+                try {
+                    await fetch(`/attendee/orders/${orderId}/refresh-status`, {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        },
+                    });
+                } catch (error) {
+                    console.warn('Gagal sinkronisasi status order:', error);
+                }
+            }
+
+            function payPendingOrder(snapToken, orderId) {
                 if (!window.snap) {
                     alert('Snap.js Midtrans belum termuat.');
                     return;
                 }
 
                 window.snap.pay(snapToken, {
-                    onSuccess: function () {
+                    onSuccess: async function () {
+                        await syncOrderStatus(orderId);
                         window.location.reload();
                     },
-                    onPending: function () {
+                    onPending: async function () {
+                        await syncOrderStatus(orderId);
                         window.location.reload();
                     },
                     onError: function () {
                         alert('Pembayaran gagal diproses. Silakan coba lagi.');
                     },
-                    onClose: function () {
+                    onClose: async function () {
+                        await syncOrderStatus(orderId);
                         window.location.reload();
                     }
                 });

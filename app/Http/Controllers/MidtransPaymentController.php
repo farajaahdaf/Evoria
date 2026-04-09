@@ -19,6 +19,21 @@ class MidtransPaymentController extends Controller
             return response()->json(['message' => 'Invalid signature.'], 403);
         }
 
+        $this->syncOrderFromPayload($payload, $midtrans);
+
+        return response()->json(['message' => 'Notification processed.']);
+    }
+
+    public function syncOrder(Order $order, MidtransService $midtrans): Order
+    {
+        $payload = $midtrans->getTransactionStatus($order->order_number);
+        $this->syncOrderFromPayload($payload, $midtrans);
+
+        return $order->fresh(['orderItems.ticket.event', 'orderItems.eTickets']);
+    }
+
+    protected function syncOrderFromPayload(array $payload, MidtransService $midtrans): void
+    {
         $mappedStatus = $midtrans->mapTransactionStatus($payload);
         $paymentType = $payload['payment_type'] ?? 'midtrans';
 
@@ -44,8 +59,6 @@ class MidtransPaymentController extends Controller
                 $this->generateETickets($order);
             }
         });
-
-        return response()->json(['message' => 'Notification processed.']);
     }
 
     protected function shouldReleaseInventory(string $previousStatus, string $nextStatus): bool

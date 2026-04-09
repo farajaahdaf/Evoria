@@ -6,6 +6,7 @@ use App\Models\Order;
 use App\Models\Ticket;
 use App\Services\MidtransService;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use RuntimeException;
@@ -115,6 +116,7 @@ class AttendeeController extends Controller
 
             return response()->json([
                 'message' => 'Transaksi berhasil dibuat.',
+                'order_id' => $order->id,
                 'order_number' => $order->order_number,
                 'snap_token' => $order->snap_token,
                 'redirect_url' => $snapResponse['redirect_url'] ?? null,
@@ -140,5 +142,24 @@ class AttendeeController extends Controller
                     : 'Gagal membuat transaksi Midtrans.',
             ], 422);
         }
+    }
+
+    public function refreshOrderStatus(Request $request, Order $order, MidtransService $midtrans, MidtransPaymentController $paymentController): JsonResponse
+    {
+        abort_unless($order->user_id === $request->user()->id, 403);
+
+        if ($order->status === 'paid') {
+            return response()->json([
+                'message' => 'Status order sudah sinkron.',
+                'status' => $order->status,
+            ]);
+        }
+
+        $order = $paymentController->syncOrder($order, $midtrans);
+
+        return response()->json([
+            'message' => 'Status order berhasil disinkronkan.',
+            'status' => $order->status,
+        ]);
     }
 }
