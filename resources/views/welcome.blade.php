@@ -44,6 +44,8 @@
 
     @if(auth()->check() && auth()->user()->role === 'attendee')
         <x-attendee-main-header />
+    @elseif(auth()->check() && auth()->user()->role === 'organizer')
+        <x-organizer-main-header />
     @else
         <!-- Navigasi Atas (header utama default dengan Buat Event / Daftar / Masuk) -->
         <header class="bg-white border-b border-gray-200">
