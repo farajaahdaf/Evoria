@@ -3,11 +3,11 @@
 namespace Database\Seeders;
 
 use App\Models\Event;
+use App\Models\EventCategory;
 use App\Models\Ticket;
 use App\Models\User;
-use App\Models\EventCategory;
-use Illuminate\Database\Seeder;
 use Carbon\Carbon;
+use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
 class EventSeeder extends Seeder
@@ -24,12 +24,11 @@ class EventSeeder extends Seeder
             return;
         }
 
-        // Public-event-inspired concert data for a richer demo catalog.
         $events = [
             [
                 'organizer_email' => 'organizer@example.com',
                 'category' => 'Music Concert',
-                'title' => 'RIIZE - 2026 RIIZE Concert Tour',
+                'title' => 'RIIZE - 2026 RIIZE Concert Tour [RIIZING LOUD]',
                 'banner_path' => 'https://images.unsplash.com/photo-1507874457470-272b3c8d8ee2?auto=format&fit=crop&w=1600&q=80',
                 'description' => 'Konser RIIZE di Indonesia sebagai bagian dari tur 2026 RIIZING LOUD dengan panggung skala arena dan penampilan lagu-lagu andalan mereka.',
                 'start_time' => Carbon::create(2026, 1, 10, 19, 0),
@@ -285,7 +284,7 @@ class EventSeeder extends Seeder
                 'organizer_email' => 'organizer@example.com',
                 'category' => 'Music Concert',
                 'title' => 'One Ok Rock - DETOX Asia Tour 2026',
-                'banner_path' => 'https://images.unsplash.com/photo-1508252592163-5d3c3c559e9c?auto=format&fit=crop&w=1600&q=80',
+                'banner_path' => 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1600&q=80',
                 'description' => 'One Ok Rock membawa DETOX Asia Tour 2026 ke Jakarta dengan panggung rock stadium penuh energi.',
                 'start_time' => Carbon::create(2026, 5, 16, 20, 0),
                 'end_time' => Carbon::create(2026, 5, 16, 23, 0),
@@ -384,6 +383,57 @@ class EventSeeder extends Seeder
                 ],
             ],
             [
+                'organizer_email' => 'edu.summit@example.com',
+                'category' => 'Tech Conference',
+                'title' => 'Laravel Live Indonesia Summit 2026',
+                'banner_path' => 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1600&q=80',
+                'description' => 'Summit untuk developer Laravel Indonesia dengan sesi engineering, arsitektur aplikasi, performance, dan product scaling.',
+                'start_time' => Carbon::create(2026, 8, 22, 9, 0),
+                'end_time' => Carbon::create(2026, 8, 22, 18, 30),
+                'location_name' => 'The Kasablanka Hall',
+                'address' => 'Kota Kasablanka, Jakarta Selatan',
+                'latitude' => -6.22351300,
+                'longitude' => 106.84206100,
+                'tickets' => [
+                    ['name' => 'Standard Pass', 'price' => 300000, 'quota' => 420],
+                    ['name' => 'Pro Pass', 'price' => 750000, 'quota' => 120],
+                ],
+            ],
+            [
+                'organizer_email' => 'sound.rhythm@example.com',
+                'category' => 'Tech Conference',
+                'title' => 'AI Product Builders Conference 2026',
+                'banner_path' => 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1600&q=80',
+                'description' => 'Konferensi untuk founder, PM, dan engineer yang membangun produk berbasis AI dengan studi kasus nyata dan sesi networking.',
+                'start_time' => Carbon::create(2026, 9, 12, 9, 30),
+                'end_time' => Carbon::create(2026, 9, 12, 18, 0),
+                'location_name' => 'Pullman Central Park',
+                'address' => 'Jl. Letjen S. Parman Kav. 28, Jakarta Barat',
+                'latitude' => -6.17777000,
+                'longitude' => 106.79032000,
+                'tickets' => [
+                    ['name' => 'Builder Pass', 'price' => 350000, 'quota' => 380],
+                    ['name' => 'Executive Pass', 'price' => 850000, 'quota' => 90],
+                ],
+            ],
+            [
+                'organizer_email' => 'edu.summit@example.com',
+                'category' => 'Tech Conference',
+                'title' => 'Cloud & Cybersecurity Expo 2026',
+                'banner_path' => 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1600&q=80',
+                'description' => 'Expo teknologi yang membahas cloud migration, security operations, compliance, dan demonstrasi produk enterprise terkini.',
+                'start_time' => Carbon::create(2026, 10, 3, 10, 0),
+                'end_time' => Carbon::create(2026, 10, 3, 18, 0),
+                'location_name' => 'Jakarta Convention Center',
+                'address' => 'Jl. Gatot Subroto, Jakarta Pusat',
+                'latitude' => -6.21461300,
+                'longitude' => 106.80708900,
+                'tickets' => [
+                    ['name' => 'Expo Pass', 'price' => 200000, 'quota' => 500],
+                    ['name' => 'Conference Pass', 'price' => 500000, 'quota' => 160],
+                ],
+            ],
+            [
                 'organizer_email' => 'creative.hub@example.com',
                 'category' => 'Workshop',
                 'title' => 'UI/UX Design Bootcamp by Creative Hub',
@@ -398,6 +448,57 @@ class EventSeeder extends Seeder
                 'tickets' => [
                     ['name' => 'Workshop Seat', 'price' => 150000, 'quota' => 120],
                     ['name' => 'Workshop + Mentoring', 'price' => 300000, 'quota' => 40],
+                ],
+            ],
+            [
+                'organizer_email' => 'creative.hub@example.com',
+                'category' => 'Workshop',
+                'title' => 'Mobile App Development Intensive 2026',
+                'banner_path' => 'https://images.unsplash.com/photo-1516321497487-e288fb19713f?auto=format&fit=crop&w=1600&q=80',
+                'description' => 'Workshop pengembangan aplikasi mobile dari perancangan fitur, integrasi API, hingga deployment aplikasi Android.',
+                'start_time' => Carbon::create(2026, 8, 1, 9, 30),
+                'end_time' => Carbon::create(2026, 8, 1, 17, 0),
+                'location_name' => 'GoWork Plaza Indonesia',
+                'address' => 'Plaza Indonesia, Jakarta Pusat',
+                'latitude' => -6.19379000,
+                'longitude' => 106.82290000,
+                'tickets' => [
+                    ['name' => 'Workshop Seat', 'price' => 175000, 'quota' => 110],
+                    ['name' => 'Workshop + Review', 'price' => 350000, 'quota' => 35],
+                ],
+            ],
+            [
+                'organizer_email' => 'harmony.stage@example.com',
+                'category' => 'Workshop',
+                'title' => 'Content Creator Monetization Lab',
+                'banner_path' => 'https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?auto=format&fit=crop&w=1600&q=80',
+                'description' => 'Sesi praktik untuk creator yang ingin membangun personal brand, paket kolaborasi, dan strategi monetisasi lintas platform.',
+                'start_time' => Carbon::create(2026, 9, 5, 10, 0),
+                'end_time' => Carbon::create(2026, 9, 5, 16, 0),
+                'location_name' => 'M Bloc Space',
+                'address' => 'Jl. Panglima Polim No.37, Jakarta Selatan',
+                'latitude' => -6.24455600,
+                'longitude' => 106.79914600,
+                'tickets' => [
+                    ['name' => 'General Seat', 'price' => 120000, 'quota' => 140],
+                    ['name' => 'Creator Clinic', 'price' => 280000, 'quota' => 45],
+                ],
+            ],
+            [
+                'organizer_email' => 'creative.hub@example.com',
+                'category' => 'Workshop',
+                'title' => 'Photography Masterclass & Editing Clinic',
+                'banner_path' => 'https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?auto=format&fit=crop&w=1600&q=80',
+                'description' => 'Kelas fotografi dan editing untuk pemula hingga intermediate dengan sesi lighting, composition, dan workflow pasca-produksi.',
+                'start_time' => Carbon::create(2026, 10, 17, 10, 0),
+                'end_time' => Carbon::create(2026, 10, 17, 17, 0),
+                'location_name' => 'Taman Ismail Marzuki',
+                'address' => 'Jl. Cikini Raya No.73, Jakarta Pusat',
+                'latitude' => -6.19040200,
+                'longitude' => 106.83973800,
+                'tickets' => [
+                    ['name' => 'Class Ticket', 'price' => 150000, 'quota' => 120],
+                    ['name' => 'Class + Portfolio Review', 'price' => 320000, 'quota' => 30],
                 ],
             ],
             [
@@ -418,6 +519,57 @@ class EventSeeder extends Seeder
                 ],
             ],
             [
+                'organizer_email' => 'arena.sports@example.com',
+                'category' => 'Sports',
+                'title' => 'Pontianak City Cycling Tour 2026',
+                'banner_path' => 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=1600&q=80',
+                'description' => 'Event bersepeda santai dan kompetitif melintasi ikon kota Pontianak dengan dua pilihan rute dan festival komunitas di garis akhir.',
+                'start_time' => Carbon::create(2026, 8, 23, 6, 0),
+                'end_time' => Carbon::create(2026, 8, 23, 11, 0),
+                'location_name' => 'Ayani Megamall Pontianak',
+                'address' => 'Jl. Ahmad Yani, Pontianak',
+                'latitude' => -0.05480000,
+                'longitude' => 109.34079000,
+                'tickets' => [
+                    ['name' => 'Fun Ride Pass', 'price' => 125000, 'quota' => 500],
+                    ['name' => 'Race Pack', 'price' => 225000, 'quota' => 180],
+                ],
+            ],
+            [
+                'organizer_email' => 'arena.sports@example.com',
+                'category' => 'Sports',
+                'title' => 'Badminton Community Championship 2026',
+                'banner_path' => 'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?auto=format&fit=crop&w=1600&q=80',
+                'description' => 'Turnamen badminton komunitas dengan kategori ganda putra, ganda campuran, dan pengalaman pertandingan yang ramah penonton.',
+                'start_time' => Carbon::create(2026, 9, 19, 8, 0),
+                'end_time' => Carbon::create(2026, 9, 20, 20, 0),
+                'location_name' => 'GOR Bulungan',
+                'address' => 'Jl. Bulungan No.1, Jakarta Selatan',
+                'latitude' => -6.24431800,
+                'longitude' => 106.79999500,
+                'tickets' => [
+                    ['name' => 'Participant Pass', 'price' => 200000, 'quota' => 220],
+                    ['name' => 'Supporter Pass', 'price' => 50000, 'quota' => 350],
+                ],
+            ],
+            [
+                'organizer_email' => 'arena.sports@example.com',
+                'category' => 'Sports',
+                'title' => 'Kalimantan Trail Adventure 2026',
+                'banner_path' => 'https://images.unsplash.com/photo-1486218119243-13883505764c?auto=format&fit=crop&w=1600&q=80',
+                'description' => 'Adventure trail run dengan lintasan hutan tropis, elevasi menantang, dan pengalaman alam terbuka khas Kalimantan Barat.',
+                'start_time' => Carbon::create(2026, 11, 14, 5, 30),
+                'end_time' => Carbon::create(2026, 11, 14, 14, 0),
+                'location_name' => 'Taman Alun Kapuas',
+                'address' => 'Jl. Rahadi Oesman, Pontianak',
+                'latitude' => -0.02059000,
+                'longitude' => 109.33414000,
+                'tickets' => [
+                    ['name' => '10K Trail', 'price' => 175000, 'quota' => 260],
+                    ['name' => '21K Trail', 'price' => 300000, 'quota' => 140],
+                ],
+            ],
+            [
                 'organizer_email' => 'harmony.stage@example.com',
                 'category' => 'Art Exhibition',
                 'title' => 'Jakarta Contemporary Art Week 2026',
@@ -432,6 +584,57 @@ class EventSeeder extends Seeder
                 'tickets' => [
                     ['name' => 'Daily Pass', 'price' => 50000, 'quota' => 600],
                     ['name' => 'Week Pass', 'price' => 180000, 'quota' => 180],
+                ],
+            ],
+            [
+                'organizer_email' => 'harmony.stage@example.com',
+                'category' => 'Art Exhibition',
+                'title' => 'Nusantara Digital Art Showcase 2026',
+                'banner_path' => 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=1600&q=80',
+                'description' => 'Showcase karya digital artist Indonesia dengan zona projection mapping, interactive screens, dan sesi temu kreator.',
+                'start_time' => Carbon::create(2026, 10, 10, 10, 0),
+                'end_time' => Carbon::create(2026, 10, 12, 21, 0),
+                'location_name' => 'Pos Bloc Jakarta',
+                'address' => 'Jl. Pos No.2, Pasar Baru, Jakarta Pusat',
+                'latitude' => -6.16108600,
+                'longitude' => 106.83697600,
+                'tickets' => [
+                    ['name' => 'Showcase Pass', 'price' => 60000, 'quota' => 420],
+                    ['name' => '3 Day Pass', 'price' => 150000, 'quota' => 120],
+                ],
+            ],
+            [
+                'organizer_email' => 'creative.hub@example.com',
+                'category' => 'Art Exhibition',
+                'title' => 'Urban Sketch & Illustration Expo',
+                'banner_path' => 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?auto=format&fit=crop&w=1600&q=80',
+                'description' => 'Pameran ilustrasi dan urban sketch yang merayakan kota, ruang publik, dan eksplorasi visual dari puluhan seniman independen.',
+                'start_time' => Carbon::create(2026, 11, 7, 10, 0),
+                'end_time' => Carbon::create(2026, 11, 9, 20, 0),
+                'location_name' => 'Taman Ismail Marzuki',
+                'address' => 'Jl. Cikini Raya No.73, Jakarta Pusat',
+                'latitude' => -6.19040200,
+                'longitude' => 106.83973800,
+                'tickets' => [
+                    ['name' => 'Exhibition Pass', 'price' => 45000, 'quota' => 450],
+                    ['name' => 'Pass + Artist Talk', 'price' => 125000, 'quota' => 100],
+                ],
+            ],
+            [
+                'organizer_email' => 'harmony.stage@example.com',
+                'category' => 'Art Exhibition',
+                'title' => 'Future Forms Immersive Gallery',
+                'banner_path' => 'https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?auto=format&fit=crop&w=1600&q=80',
+                'description' => 'Galeri imersif yang memadukan cahaya, audio spatial, dan instalasi interaktif untuk pengalaman seni kontemporer yang lebih eksperimental.',
+                'start_time' => Carbon::create(2026, 12, 5, 11, 0),
+                'end_time' => Carbon::create(2026, 12, 8, 21, 0),
+                'location_name' => 'Art:1 New Museum',
+                'address' => 'Jl. Rajawali Selatan Raya No.3, Jakarta Pusat',
+                'latitude' => -6.14553400,
+                'longitude' => 106.83966700,
+                'tickets' => [
+                    ['name' => 'Entry Pass', 'price' => 75000, 'quota' => 380],
+                    ['name' => 'Immersive Bundle', 'price' => 160000, 'quota' => 90],
                 ],
             ],
         ];

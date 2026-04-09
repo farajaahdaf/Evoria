@@ -1,4 +1,17 @@
 <x-app-layout>
+    @php
+        $bannerUrl = null;
+
+        if (filled($event->banner_path)) {
+            if (\Illuminate\Support\Str::startsWith($event->banner_path, ['http://', 'https://'])) {
+                $bannerUrl = $event->banner_path;
+            } else {
+                $normalizedPath = ltrim(preg_replace('#^/?storage/#', '', $event->banner_path), '/');
+                $bannerUrl = asset('storage/' . $normalizedPath);
+            }
+        }
+    @endphp
+
     <x-slot name="header">
         <h2 class="font-semibold text-2xl text-gray-800 leading-tight">
             {{ __('Event Details: ') }} {{ $event->title }}
@@ -11,8 +24,8 @@
             <div class="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100">
                 <!-- Banner -->
                 <div class="h-64 bg-gray-200 relative">
-                    @if($event->banner_path)
-                        <img src="{{ asset('storage/' . $event->banner_path) }}" class="w-full h-full object-cover">
+                    @if($bannerUrl)
+                        <img src="{{ $bannerUrl }}" alt="{{ $event->title }}" class="w-full h-full object-cover">
                     @else
                         <div class="absolute inset-0 bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold text-3xl opacity-80">
                             {{ $event->title }}
