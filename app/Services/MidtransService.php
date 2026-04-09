@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\Order;
-use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use RuntimeException;
@@ -43,7 +42,7 @@ class MidtransService
             ];
         })->values()->all();
 
-        $response = $this->request()->post('/snap/v1/transactions', [
+        $response = $this->snapRequest()->post('/snap/v1/transactions', [
             'transaction_details' => [
                 'order_id' => $order->order_number,
                 'gross_amount' => (int) round((float) $order->total_amount),
@@ -62,6 +61,17 @@ class MidtransService
 
         if (! $response->successful()) {
             throw new RuntimeException('Failed to create Midtrans Snap transaction: ' . $response->body());
+        }
+
+        return $response->json();
+    }
+
+    public function getTransactionStatus(string $orderNumber): array
+    {
+        $response = $this->coreRequest()->get('/v2/' . $orderNumber . '/status');
+
+        if (! $response->successful()) {
+            throw new RuntimeException('Failed to fetch Midtrans transaction status: ' . $response->body());
         }
 
         return $response->json();
@@ -100,7 +110,7 @@ class MidtransService
         };
     }
 
-    protected function request()
+    protected function snapRequest()
     {
         $serverKey = config('services.midtrans.server_key');
 
@@ -110,13 +120,33 @@ class MidtransService
 
         return Http::acceptJson()
             ->withBasicAuth($serverKey, '')
-            ->baseUrl($this->getApiBaseUrl());
+            ->baseUrl($this->getSnapApiBaseUrl());
     }
 
-    protected function getApiBaseUrl(): string
+    protected function coreRequest()
+    {
+        $serverKey = config('services.midtrans.server_key');
+
+        if (blank($serverKey)) {
+            throw new RuntimeException('Midtrans server key is not configured.');
+        }
+
+        return Http::acceptJson()
+            ->withBasicAuth($serverKey, '')
+            ->baseUrl($this->getCoreApiBaseUrl());
+    }
+
+    protected function getSnapApiBaseUrl(): string
     {
         return config('services.midtrans.is_production')
             ? 'https://app.midtrans.com'
             : 'https://app.sandbox.midtrans.com';
+    }
+
+    protected function getCoreApiBaseUrl(): string
+    {
+        return config('services.midtrans.is_production')
+            ? 'https://api.midtrans.com'
+            : 'https://api.sandbox.midtrans.com';
     }
 }

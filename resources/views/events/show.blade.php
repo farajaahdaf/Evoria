@@ -263,16 +263,19 @@
                 }
 
                 window.snap.pay(payload.snap_token, {
-                    onSuccess: function () {
+                    onSuccess: async function () {
+                        await syncOrderStatus(payload.order_id);
                         window.location.href = "{{ route('attendee.dashboard') }}";
                     },
-                    onPending: function () {
+                    onPending: async function () {
+                        await syncOrderStatus(payload.order_id);
                         window.location.href = "{{ route('attendee.dashboard') }}";
                     },
                     onError: function () {
                         alert('Pembayaran gagal diproses. Silakan coba lagi.');
                     },
-                    onClose: function () {
+                    onClose: async function () {
+                        await syncOrderStatus(payload.order_id);
                         window.location.href = "{{ route('attendee.dashboard') }}";
                     }
                 });
@@ -286,6 +289,23 @@
             }
 
             return false;
+        }
+
+        async function syncOrderStatus(orderId) {
+            if (!orderId) return;
+
+            try {
+                await fetch(`/attendee/orders/${orderId}/refresh-status`, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content
+                            || document.querySelector('input[name="_token"]')?.value,
+                    },
+                });
+            } catch (error) {
+                console.warn('Gagal sinkronisasi status order:', error);
+            }
         }
     </script>
 </body>
