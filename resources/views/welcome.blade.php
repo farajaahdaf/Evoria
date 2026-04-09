@@ -111,41 +111,129 @@
 
     <main class="max-w-[1200px] mx-auto px-6 py-10 space-y-12">
         
-        <!-- Hero Section -->
+        <!-- Hero Section / Banner Carousel -->
         <section>
             @php
-                $featuredEvent = isset($events) && count($events) > 0 ? $events->first() : null;
                 $resolveBannerUrl = function ($path, $fallback) {
                     if (blank($path)) {
                         return $fallback;
                     }
-
                     if (\Illuminate\Support\Str::startsWith($path, ['http://', 'https://'])) {
                         return $path;
                     }
-
                     $normalizedPath = ltrim(preg_replace('#^/?storage/#', '', $path), '/');
-
                     return \Illuminate\Support\Facades\Storage::url($normalizedPath);
                 };
+
+                $fallbackImages = [
+                    'https://images.unsplash.com/photo-1470229722913-7c092b122fba?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80',
+                    'https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80',
+                    'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80',
+                    'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80',
+                    'https://images.unsplash.com/photo-1429962714451-bb934ecdc4ec?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80',
+                ];
+
+                $bannerEvents = isset($events) && count($events) > 0 ? $events->take(5) : collect();
             @endphp
-            
-            @if($featuredEvent)
-                <div class="relative rounded-[20px] overflow-hidden bg-white shadow-sm h-[320px] group cursor-pointer block">
-                    <img src="{{ $resolveBannerUrl($featuredEvent->banner_path, 'https://images.unsplash.com/photo-1470229722913-7c092b122fba?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80') }}" alt="{{ $featuredEvent->title }}" class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
-                    <div class="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/40 to-transparent"></div>
-                    <div class="absolute bottom-0 left-0 p-8 w-full z-10 flex flex-col">
-                        <span class="px-3 py-1 bg-primary/80 backdrop-blur text-white text-[10px] font-bold uppercase tracking-wider rounded-md mb-3 w-fit">Event Unggulan</span>
-                        <h2 class="text-[32px] md:text-[40px] font-black text-white leading-tight mb-2">{{ $featuredEvent->title }}</h2>
-                        <div class="flex items-center gap-4 text-slate-100 text-[14px] font-medium">
-                            <span class="flex items-center gap-1.5"><span class="material-symbols-outlined text-[16px]">location_on</span> {{ $featuredEvent->location_name }}</span>
-                            <span class="flex items-center gap-1.5"><span class="material-symbols-outlined text-[16px]">calendar_today</span> {{ \Carbon\Carbon::parse($featuredEvent->start_time)->translatedFormat('d M Y') }}</span>
-                        </div>
+
+            @if($bannerEvents->count() > 0)
+                <div
+                    class="relative rounded-[20px] overflow-hidden bg-slate-900 shadow-lg h-[360px] select-none group"
+                    x-data="{
+                        current: 0,
+                        total: {{ $bannerEvents->count() }},
+                        autoTimer: null,
+                        paused: false,
+                        slides: {{ json_encode($bannerEvents->values()->map(fn($e, $i) => [
+                            'url'      => route('events.show', $e->slug ?? $e->id),
+                            'img'      => $resolveBannerUrl($e->banner_path, $fallbackImages[$loop->index ?? $i] ?? $fallbackImages[0]),
+                            'title'    => $e->title,
+                            'location' => $e->location_name,
+                            'date'     => \Carbon\Carbon::parse($e->start_time)->translatedFormat('d M Y'),
+                        ])->values()) }},
+                        init() {
+                            this.startAuto();
+                        },
+                        startAuto() {
+                            this.autoTimer = setInterval(() => {
+                                if (!this.paused) this.next();
+                            }, 5000);
+                        },
+                        next() { this.current = (this.current + 1) % this.total; },
+                        prev() { this.current = (this.current - 1 + this.total) % this.total; },
+                        goTo(i) { this.current = i; }
+                    }"
+                    @mouseenter="paused = true"
+                    @mouseleave="paused = false"
+                >
+                    {{-- Slides --}}
+                    <template x-for="(slide, index) in slides" :key="index">
+                        <a
+                            :href="slide.url"
+                            class="absolute inset-0 w-full h-full block transition-opacity duration-700"
+                            :class="{ 'opacity-100 z-10': current === index, 'opacity-0 z-0': current !== index }"
+                        >
+                            <img
+                                :src="slide.img"
+                                :alt="slide.title"
+                                class="absolute inset-0 w-full h-full object-cover transition-transform duration-[8000ms]"
+                                :class="{ 'scale-110': current === index, 'scale-100': current !== index }"
+                            >
+                            <div class="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/40 to-transparent"></div>
+                            <div class="absolute bottom-0 left-0 p-8 w-full z-10 flex flex-col">
+                                <span class="px-3 py-1 bg-primary/80 backdrop-blur text-white text-[10px] font-bold uppercase tracking-wider rounded-md mb-3 w-fit">Event Unggulan</span>
+                                <h2 class="text-[28px] md:text-[38px] font-black text-white leading-tight mb-2 line-clamp-2" x-text="slide.title"></h2>
+                                <div class="flex items-center gap-4 text-slate-200 text-[13px] font-medium">
+                                    <span class="flex items-center gap-1.5">
+                                        <span class="material-symbols-outlined text-[15px]">location_on</span>
+                                        <span x-text="slide.location"></span>
+                                    </span>
+                                    <span class="flex items-center gap-1.5">
+                                        <span class="material-symbols-outlined text-[15px]">calendar_today</span>
+                                        <span x-text="slide.date"></span>
+                                    </span>
+                                </div>
+                            </div>
+                        </a>
+                    </template>
+
+                    {{-- Arrow Prev --}}
+                    <button
+                        @click.prevent="prev()"
+                        class="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/40 backdrop-blur hover:bg-black/60 text-white flex items-center justify-center transition-all duration-300 hover:scale-110 focus:outline-none opacity-0 group-hover:opacity-100"
+                    >
+                        <span class="material-symbols-outlined text-[22px]">chevron_left</span>
+                    </button>
+
+                    {{-- Arrow Next --}}
+                    <button
+                        @click.prevent="next()"
+                        class="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/40 backdrop-blur hover:bg-black/60 text-white flex items-center justify-center transition-all duration-300 hover:scale-110 focus:outline-none opacity-0 group-hover:opacity-100"
+                    >
+                        <span class="material-symbols-outlined text-[22px]">chevron_right</span>
+                    </button>
+
+                    {{-- Dot Indicators --}}
+                    <div class="absolute bottom-5 right-8 z-20 flex items-center gap-2">
+                        <template x-for="(slide, index) in slides" :key="'dot-' + index">
+                            <button
+                                @click.prevent="goTo(index)"
+                                class="rounded-full transition-all duration-300 focus:outline-none"
+                                :class="current === index
+                                    ? 'w-6 h-2.5 bg-white'
+                                    : 'w-2.5 h-2.5 bg-white/40 hover:bg-white/70'"
+                            ></button>
+                        </template>
+                    </div>
+
+                    {{-- Slide Counter --}}
+                    <div class="absolute top-5 right-5 z-20 bg-black/40 backdrop-blur text-white text-[12px] font-bold px-3 py-1 rounded-full transition-opacity duration-300 opacity-0 group-hover:opacity-100">
+                        <span x-text="current + 1"></span> / <span x-text="total"></span>
                     </div>
                 </div>
             @else
-                <div class="bg-white rounded-[16px] h-[320px] flex items-center justify-center shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
-                    <p class="text-[24px] italic font-medium text-slate-800">Event unggulan yang sedang berlansung</p>
+                <div class="bg-white rounded-[16px] h-[360px] flex items-center justify-center shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
+                    <p class="text-[24px] italic font-medium text-slate-800">Belum ada event unggulan saat ini</p>
                 </div>
             @endif
         </section>
