@@ -1,4 +1,20 @@
 <x-app-layout>
+    @php
+        $resolveBannerUrl = function ($path, $fallback) {
+            if (blank($path)) {
+                return $fallback;
+            }
+
+            if (\Illuminate\Support\Str::startsWith($path, ['http://', 'https://'])) {
+                return $path;
+            }
+
+            $normalizedPath = ltrim(preg_replace('#^/?storage/#', '', $path), '/');
+
+            return asset('storage/' . $normalizedPath);
+        };
+    @endphp
+
     <x-slot name="header">
         <h2 class="font-semibold text-2xl text-gray-800 leading-tight">
             {{ __('My Events') }}
@@ -25,14 +41,12 @@
                 @forelse($events as $event)
                 <div class="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 flex flex-col hover:shadow-lg transition duration-300">
                     <div class="h-40 bg-gray-200 relative">
-                        <!-- Banner Image -->
-                        @if($event->banner_path)
-                            <img src="{{ asset('storage/' . $event->banner_path) }}" alt="{{ $event->title }}" class="w-full h-full object-cover">
-                        @else
-                            <div class="absolute inset-0 bg-gradient-to-tr from-indigo-500 to-purple-400 flex items-center justify-center text-white font-bold text-xl opacity-80">
-                                {{ substr($event->title, 0, 20) }}...
-                            </div>
-                        @endif
+                        <img
+                            src="{{ $resolveBannerUrl($event->banner_path, 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1200&q=80') }}"
+                            alt="{{ $event->title }}"
+                            class="w-full h-full object-cover"
+                        >
+                        <div class="absolute inset-0 bg-gradient-to-t from-slate-950/55 via-slate-950/10 to-transparent"></div>
                         <div class="absolute top-3 right-3 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide
                             {{ $event->status === 'published' ? 'bg-green-100 text-green-800' : 
                                ($event->status === 'pending_review' ? 'bg-yellow-100 text-yellow-800' : 

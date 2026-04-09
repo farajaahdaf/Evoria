@@ -32,6 +32,18 @@
     </style>
 </head>
 <body class="antialiased bg-[#F4F6F9] text-gray-900 font-sans" x-data="{ bookingModal: false, selectedTicket: null }">
+    @php
+        $bannerUrl = 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80';
+
+        if (filled($event->banner_path)) {
+            if (\Illuminate\Support\Str::startsWith($event->banner_path, ['http://', 'https://'])) {
+                $bannerUrl = $event->banner_path;
+            } else {
+                $normalizedPath = ltrim(preg_replace('#^/?storage/#', '', $event->banner_path), '/');
+                $bannerUrl = asset('storage/' . $normalizedPath);
+            }
+        }
+    @endphp
     
     @auth
         @if(auth()->user()->role === 'attendee')
@@ -68,11 +80,7 @@
 
     <!-- Event Hero -->
     <div class="relative bg-gray-900 h-96">
-        @if($event->banner_path)
-            <img src="{{ asset('storage/' . $event->banner_path) }}" class="w-full h-full object-cover opacity-60">
-        @else
-            <img src="https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80" class="w-full h-full object-cover opacity-60">
-        @endif
+        <img src="{{ $bannerUrl }}" alt="{{ $event->title }}" class="w-full h-full object-cover opacity-60">
         <div class="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent"></div>
         <div class="absolute bottom-0 w-full">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-10">
