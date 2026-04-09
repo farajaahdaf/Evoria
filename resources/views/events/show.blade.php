@@ -37,28 +37,33 @@
         @if(auth()->user()->role === 'attendee')
             <x-attendee-main-header />
         @else
-            <nav class="bg-white border-b border-gray-200 sticky top-0 z-40">
-                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div class="flex justify-between items-center h-16">
-                        <a href="/" class="text-2xl font-bold tracking-tight text-blue-600">Evo<span class="text-yellow-400">ria</span></a>
-                        <div class="flex items-center space-x-4">
-                            <a href="{{ url('/dashboard') }}" class="font-bold text-gray-600 hover:text-blue-600 transition">Dashboard</a>
-                        </div>
+            <header class="bg-white border-b border-gray-200 sticky top-0 z-40">
+                <div class="max-w-[1400px] mx-auto px-6 h-[80px] flex items-center justify-between gap-6">
+                    <div class="flex items-center gap-8">
+                        <a href="{{ route('home') }}" class="flex items-center gap-1 shrink-0">
+                            <x-application-logo class="h-10 w-auto" />
+                        </a>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <a href="{{ url('/dashboard') }}" class="px-6 py-[10px] text-[14px] font-bold border border-primary text-primary rounded-lg hover:bg-primary/5 transition-colors">Dashboard</a>
                     </div>
                 </div>
-            </nav>
+            </header>
         @endif
     @else
-        <nav class="bg-white border-b border-gray-200 sticky top-0 z-40">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex justify-between items-center h-16">
-                    <a href="/" class="text-2xl font-bold tracking-tight text-blue-600">Evo<span class="text-yellow-400">ria</span></a>
-                    <div class="flex items-center space-x-4">
-                        <a href="{{ route('login') }}" class="font-bold text-gray-600 hover:text-blue-600 transition">Log in</a>
-                    </div>
+        <header class="bg-white border-b border-gray-200 sticky top-0 z-40">
+            <div class="max-w-[1400px] mx-auto px-6 h-[80px] flex items-center justify-between gap-6">
+                <div class="flex items-center gap-8">
+                    <a href="{{ route('home') }}" class="flex items-center gap-1 shrink-0">
+                        <x-application-logo class="h-10 w-auto" />
+                    </a>
+                </div>
+                <div class="flex items-center gap-3">
+                    <a href="{{ route('register') }}" class="px-6 py-[10px] text-[14px] font-bold border border-primary text-primary rounded-lg hover:bg-primary/5 transition-colors">Daftar</a>
+                    <a href="{{ route('login') }}" class="px-6 py-[10px] bg-primary text-white text-[14px] font-bold rounded-lg hover:bg-primary/90 transition-all shadow-sm">Masuk</a>
                 </div>
             </div>
-        </nav>
+        </header>
     @endauth
 
     <!-- Event Hero -->
