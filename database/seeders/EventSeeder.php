@@ -2,12 +2,12 @@
 
 namespace Database\Seeders;
 
-use Carbon\Carbon;
 use App\Models\Event;
-use App\Models\EventCategory;
 use App\Models\Ticket;
 use App\Models\User;
+use App\Models\EventCategory;
 use Illuminate\Database\Seeder;
+use Carbon\Carbon;
 use Illuminate\Support\Str;
 
 class EventSeeder extends Seeder
