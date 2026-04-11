@@ -18,7 +18,28 @@ class OrganizerController extends Controller
     {
         $user = $request->user();
         $eventsCount = $user->events()->count();
+        $publishedCount = $user->events()->where('status', 'published')->count();
+        
+        $totalTicketsSold = \App\Models\OrderItem::whereHas('ticket.event', function ($query) use ($user) {
+            $query->where('organizer_id', $user->id);
+        })->whereHas('order', function ($query) {
+            $query->where('status', 'paid');
+        })->sum('quantity');
 
-        return view('organizer.dashboard', compact('eventsCount'));
+        $totalRevenue = \App\Models\OrderItem::whereHas('ticket.event', function ($query) use ($user) {
+            $query->where('organizer_id', $user->id);
+        })->whereHas('order', function ($query) {
+            $query->where('status', 'paid');
+        })->sum('subtotal');
+
+        $recentEvents = $user->events()->latest()->take(5)->get();
+
+        return view('organizer.dashboard', compact(
+            'eventsCount', 
+            'publishedCount', 
+            'totalTicketsSold', 
+            'totalRevenue',
+            'recentEvents'
+        ));
     }
 }

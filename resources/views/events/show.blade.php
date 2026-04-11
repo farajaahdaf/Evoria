@@ -31,7 +31,7 @@
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
     </style>
 </head>
-<body class="antialiased bg-[#F4F6F9] text-gray-900 font-sans" x-data="{ bookingModal: false, selectedTicket: null }">
+<body class="antialiased bg-[#ebebeb] text-gray-900 font-sans" x-data="{ bookingModal: false, selectedTicket: null }">
     @php
         $bannerUrl = 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80';
 
@@ -109,23 +109,23 @@
                     </div>
                 @endif
 
-                <section>
-                    <h2 class="text-2xl font-bold text-gray-900 mb-4 border-b pb-2">Description</h2>
-                    <div class="prose max-w-none text-gray-600 leading-relaxed whitespace-pre-line">
+                <section class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+                    <h2 class="text-2xl font-bold text-gray-900 border-b border-gray-200 pb-3 mb-4">Description</h2>
+                    <div class="prose max-w-none text-gray-700 leading-relaxed whitespace-pre-line">
                         {{ $event->description }}
                     </div>
                 </section>
 
-                <section>
-                    <h2 class="text-2xl font-bold text-gray-900 mb-4 border-b pb-2">Time & Location</h2>
-                    <div class="bg-white p-6 rounded-xl border border-gray-100 shadow-sm flex flex-col sm:flex-row sm:space-x-8 space-y-4 sm:space-y-0">
+                <section class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+                    <h2 class="text-2xl font-bold text-gray-900 border-b border-gray-200 pb-3 mb-4">Time & Location</h2>
+                    <div class="flex flex-col sm:flex-row sm:space-x-8 space-y-4 sm:space-y-0">
                         <div class="flex items-start space-x-4">
                             <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center shrink-0">
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                             </div>
                             <div>
                                 <h4 class="font-bold text-gray-900">Date & Time</h4>
-                                <p class="text-gray-600 mt-1">{{ $event->start_time->format('l, d F Y') }}<br>{{ $event->start_time->format('H:i') }} - {{ $event->end_time->format('H:i') }}</p>
+                                <p class="text-gray-700 leading-relaxed mt-1">{{ $event->start_time->format('l, d F Y') }}<br>{{ $event->start_time->format('H:i') }} - {{ $event->end_time->format('H:i') }}</p>
                             </div>
                         </div>
                         <div class="flex items-start space-x-4">
@@ -134,16 +134,16 @@
                             </div>
                             <div>
                                 <h4 class="font-bold text-gray-900">Location</h4>
-                                <p class="text-gray-600 mt-1 font-medium">{{ $event->location_name }}</p>
-                                <p class="text-gray-500 text-sm mt-0.5">{{ $event->address }}</p>
+                                <p class="text-gray-700 leading-relaxed mt-1 font-medium">{{ $event->location_name }}</p>
+                                <p class="text-gray-500 text-sm mt-0.5 leading-relaxed">{{ $event->address }}</p>
                             </div>
                         </div>
                     </div>
                 </section>
 
                 @if($event->latitude && $event->longitude)
-                    <section>
-                        <div class="flex items-center justify-between gap-4 mb-4 border-b pb-2">
+                    <section class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+                        <div class="flex items-center justify-between gap-4 border-b border-gray-200 pb-3 mb-4">
                             <h2 class="text-2xl font-bold text-gray-900">Event Map</h2>
                             <a
                                 href="https://www.google.com/maps/search/?api=1&query={{ $event->latitude }},{{ $event->longitude }}"
@@ -154,7 +154,7 @@
                                 Buka di Google Maps
                             </a>
                         </div>
-                        <div class="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+                        <div class="overflow-hidden rounded-xl border border-gray-100 bg-gray-50">
                             <div id="event-map" class="h-[360px] w-full"></div>
                         </div>
                     </section>
@@ -241,7 +241,7 @@
                     </span>
                     <button
                         type="submit"
-                        class="bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 transition shadow disabled:opacity-60 disabled:cursor-not-allowed"
+                        class="bg-[#10367d] text-white font-bold py-3 px-6 rounded-lg hover:bg-[#0c2a61] transition shadow disabled:opacity-60 disabled:cursor-not-allowed"
                         :disabled="!selectedTicket"
                     >
                         Bayar Sekarang

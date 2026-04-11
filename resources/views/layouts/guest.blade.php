@@ -32,7 +32,7 @@
             }
         </script>
     </head>
-    <body class="min-h-screen bg-slate-100 text-slate-900 antialiased" style="font-family: 'Plus Jakarta Sans', sans-serif;">
+    <body class="min-h-screen bg-[#ebebeb] text-slate-900 antialiased" style="font-family: 'Plus Jakarta Sans', sans-serif;">
         <div class="relative min-h-screen overflow-hidden">
             <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(37,99,235,0.1),_transparent_34%),radial-gradient(circle_at_bottom_right,_rgba(14,116,144,0.09),_transparent_34%),linear-gradient(180deg,_#f8fafc_0%,_#f1f5f9_100%)]"></div>
             <div class="absolute inset-y-0 right-0 hidden w-[46%] bg-[linear-gradient(180deg,_rgba(15,23,42,0.95)_0%,_rgba(30,41,59,0.92)_100%)] lg:block"></div>

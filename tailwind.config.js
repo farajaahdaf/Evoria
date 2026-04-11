@@ -15,7 +15,7 @@ export default {
                 sans: ['Plus Jakarta Sans', ...defaultTheme.fontFamily.sans],
             },
             colors: {
-                primary: "#2563EB",
+                primary: "#10367d",
                 "hero-bg": "#F8F9FA",
                 "dark-footer": "#0F172A",
             },

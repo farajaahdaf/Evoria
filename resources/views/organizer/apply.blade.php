@@ -1,5 +1,5 @@
 <x-app-layout>
-    <div class="min-h-screen bg-slate-50 py-12">
+    <div class="min-h-screen bg-[#ebebeb] py-12">
         <div class="max-w-4xl mx-auto sm:px-6 lg:px-8" x-data="{ step: 1 }">
             <div class="bg-white rounded-[32px] overflow-hidden shadow-[0_20px_80px_rgba(15,23,42,0.08)] border border-slate-200/80">
                 <div class="p-8 lg:p-12">

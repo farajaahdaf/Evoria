@@ -13,7 +13,7 @@
             body { font-family: 'Plus Jakarta Sans', sans-serif; }
         </style>
     </head>
-    <body class="bg-[#F4F6F9] min-h-screen text-slate-900">
+    <body class="bg-[#ebebeb] min-h-screen text-slate-900">
         <x-attendee-main-header />
 
         @php

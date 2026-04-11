@@ -10,8 +10,20 @@ class AdminController extends Controller
     {
         $pendingOrganizers = \App\Models\OrganizerProfile::where('status', 'pending')->count();
         $pendingEvents = \App\Models\Event::where('status', 'pending_review')->count();
+        
+        $totalUsers = \App\Models\User::where('role', 'attendee')->count();
+        $totalOrganizers = \App\Models\OrganizerProfile::where('status', 'verified')->count();
+        $totalRevenue = \App\Models\Order::where('status', 'paid')->sum('total_amount');
+        $totalEvents = \App\Models\Event::where('status', 'published')->count();
 
-        return view('admin.dashboard', compact('pendingOrganizers', 'pendingEvents'));
+        return view('admin.dashboard', compact(
+            'pendingOrganizers', 
+            'pendingEvents', 
+            'totalUsers', 
+            'totalOrganizers', 
+            'totalRevenue', 
+            'totalEvents'
+        ));
     }
 
     public function verifyOrganizers()
@@ -56,5 +68,18 @@ class AdminController extends Controller
         $event = \App\Models\Event::findOrFail($id);
         $event->update(['status' => 'published']);
         return back()->with('success', 'Event approved and published successfully.');
+    }
+
+    public function rejectEvent(Request $request, $id)
+    {
+        $event = \App\Models\Event::findOrFail($id);
+        $event->update(['status' => 'rejected']);
+        return back()->with('success', 'Event application rejected.');
+    }
+
+    public function transactions()
+    {
+        $orders = \App\Models\Order::with(['user', 'orderItems.ticket.event'])->latest()->get();
+        return view('admin.transactions', compact('orders'));
     }
 }

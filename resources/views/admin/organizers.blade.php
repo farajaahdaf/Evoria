@@ -43,7 +43,7 @@
                                     <a href="{{ route('admin.organizers.show', $org->id) }}" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium transition">View Details</a>
                                     <form action="{{ route('admin.organizers.verify', $org->id) }}" method="POST">
                                         @csrf
-                                        <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium shadow-sm transition">Verify</button>
+                                        <button type="submit" class="px-4 py-2 bg-[#10367d] text-white rounded-lg hover:bg-[#0c2a61] font-medium shadow-sm transition">Verify</button>
                                     </form>
                                 </td>
                             </tr>

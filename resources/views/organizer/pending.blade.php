@@ -45,7 +45,7 @@
                 </div>
 
                 <div class="flex items-center gap-3">
-                    <a href="{{ route('profile.edit') }}" class="px-5 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
+                    <a href="{{ route('profile.edit') }}" class="px-5 py-2.5 bg-[#10367d] text-white rounded-lg hover:bg-[#0c2a61] transition">
                         Lihat Profil
                     </a>
                     <a href="{{ route('logout') }}"
