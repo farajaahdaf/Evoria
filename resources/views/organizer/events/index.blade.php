@@ -69,16 +69,19 @@
                             </div>
                         </div>
 
-                        <div class="mt-auto flex space-x-2 pt-4 border-t border-gray-100">
-                            <a href="{{ route('organizer.events.show', $event->id) }}" class="flex-1 text-center py-2 bg-gray-50 text-gray-700 font-medium rounded hover:bg-gray-100 transition">View</a>
-                            
-                            @if($event->status === 'draft')
-                            <form action="{{ route('organizer.events.update', $event->id) }}" method="POST" class="flex-1">
-                                @csrf @method('PUT')
-                                <input type="hidden" name="action" value="submit">
-                                <button type="submit" class="w-full text-center py-2 bg-blue-50 text-primary font-medium rounded hover:bg-blue-100 transition">Submit Review</button>
-                            </form>
-                            @endif
+                        <div class="mt-auto flex flex-col space-y-2 pt-4 border-t border-gray-100">
+                            <div class="flex space-x-2">
+                                <a href="{{ route('organizer.events.show', $event->id) }}" class="flex-1 text-center py-2 bg-gray-50 text-gray-700 font-medium rounded hover:bg-gray-100 transition">View</a>
+                                
+                                @if($event->status === 'draft')
+                                <form action="{{ route('organizer.events.update', $event->id) }}" method="POST" class="flex-1">
+                                    @csrf @method('PUT')
+                                    <input type="hidden" name="action" value="submit">
+                                    <button type="submit" class="w-full text-center py-2 bg-blue-50 text-primary font-medium rounded hover:bg-blue-100 transition">Submit Review</button>
+                                </form>
+                                @endif
+                            </div>
+                            <a href="{{ route('organizer.events.attendees', $event->id) }}" class="w-full text-center py-2 bg-emerald-50 text-emerald-700 font-medium rounded hover:bg-emerald-100 transition">Lihat Peserta</a>
                         </div>
                     </div>
                 </div>

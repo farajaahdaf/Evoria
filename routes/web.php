@@ -94,10 +94,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/organizers/{id}/reject', [AdminController::class, 'rejectOrganizer'])->name('organizers.reject');
         Route::get('/events', [AdminController::class, 'approveEvents'])->name('events');
         Route::post('/events/{id}/approve', [AdminController::class, 'publishEvent'])->name('events.approve');
+        Route::post('/events/{id}/reject', [AdminController::class, 'rejectEvent'])->name('events.reject');
+        Route::get('/transactions', [AdminController::class, 'transactions'])->name('transactions');
     });
 
     Route::middleware('role:organizer')->prefix('organizer')->name('organizer.')->group(function () {
         Route::get('/dashboard', [OrganizerController::class, 'dashboard'])->name('dashboard');
+        Route::get('/events/{event}/attendees', [EventController::class, 'attendees'])->name('events.attendees');
+        Route::get('/events/{event}/checkin', [EventController::class, 'checkinView'])->name('events.checkin');
+        Route::post('/events/{event}/checkin', [EventController::class, 'checkin'])->name('events.checkin.scan');
         Route::resource('events', EventController::class);
     });
 });

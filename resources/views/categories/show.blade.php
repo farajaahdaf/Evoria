@@ -38,7 +38,7 @@
         .fab-container:hover .fab-tooltip { opacity: 1; transform: translateX(-110%) translateY(-50%); }
     </style>
 </head>
-<body class="bg-[#F4F6F9] min-h-screen text-slate-900" x-data="{ chatbotOpen: false }">
+<body class="bg-[#ebebeb] min-h-screen text-slate-900" x-data="{ chatbotOpen: false }">
 
     @if(auth()->check() && auth()->user()->role === 'attendee')
         <x-attendee-main-header />

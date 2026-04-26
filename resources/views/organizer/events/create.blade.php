@@ -1,5 +1,5 @@
 <x-app-layout>
-    <div class="min-h-screen bg-slate-50">
+    <div class="min-h-screen bg-[#ebebeb]">
         <div class="mx-auto flex w-full max-w-7xl flex-1 items-stretch px-5 py-8 sm:px-8 lg:px-10 lg:py-10" x-data="eventForm()">
             <div class="grid w-full flex-1 overflow-hidden rounded-[32px] border border-slate-200/80 bg-white shadow-[0_20px_80px_rgba(15,23,42,0.08)] lg:grid-cols-[minmax(0,1fr)_minmax(420px,0.8fr)]">
                 <!-- Left Section: Form -->

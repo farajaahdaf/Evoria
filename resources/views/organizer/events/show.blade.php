@@ -115,14 +115,14 @@
                             </div>
 
                             <div class="mt-8 space-y-3">
+                                <a href="{{ route('organizer.events.attendees', $event->id) }}" class="block w-full text-center py-3 bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-700 transition">Lihat Peserta / Penjualan</a>
+
                                 @if($event->status === 'draft')
                                     <form action="{{ route('organizer.events.update', $event->id) }}" method="POST">
                                         @csrf @method('PUT')
                                         <input type="hidden" name="action" value="submit">
-                                        <button type="submit" class="w-full py-3 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 transition">Submit to Admin for Review</button>
+                                        <button type="submit" class="w-full py-3 bg-[#10367d] text-white font-bold rounded-lg hover:bg-[#0c2a61] transition">Submit to Admin for Review</button>
                                     </form>
-                                @elseif($event->status === 'approved')
-                                    <!-- In a real app we might have a publish button, or admin auto-publishes. Currently logic uses 'published' -->
                                 @endif
                                 <a href="{{ route('organizer.events.index') }}" class="block w-full text-center py-3 bg-white border border-gray-300 text-gray-700 font-bold rounded-lg hover:bg-gray-50 transition">Back to Events</a>
                             </div>

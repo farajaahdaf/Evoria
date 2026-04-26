@@ -140,4 +140,73 @@ class EventController extends Controller
         $event->delete();
         return back()->with('success', 'Event deleted.');
     }
+
+    public function attendees(Event $event)
+    {
+        if ($event->organizer_id !== auth()->id()) {
+            abort(403);
+        }
+
+        $orderItems = \App\Models\OrderItem::with(['order.user', 'ticket', 'eTickets'])
+            ->whereHas('ticket', function ($query) use ($event) {
+                $query->where('event_id', $event->id);
+            })->latest()->get();
+
+        return view('organizer.events.attendees', compact('event', 'orderItems'));
+    }
+
+    public function checkinView(Event $event)
+    {
+        if ($event->organizer_id !== auth()->id()) {
+            abort(403);
+        }
+        return view('organizer.events.checkin', compact('event'));
+    }
+
+    public function checkin(Request $request, Event $event)
+    {
+        if ($event->organizer_id !== auth()->id()) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+        }
+
+        $request->validate([
+            'ticket_code' => 'required|string'
+        ]);
+
+        $eTicket = \App\Models\ETicket::with(['orderItem.ticket.event', 'orderItem.order.user'])
+            ->where('ticket_code', $request->ticket_code)
+            ->first();
+
+        if (!$eTicket) {
+            return response()->json(['success' => false, 'message' => 'Ticket code not found']);
+        }
+
+        if ($eTicket->orderItem->ticket->event_id !== $event->id) {
+            return response()->json(['success' => false, 'message' => 'This ticket is for a different event']);
+        }
+
+        if ($eTicket->status !== 'active') {
+            return response()->json([
+                'success' => false, 
+                'message' => 'Ticket is ' . $eTicket->status . ' (Check-in time: ' . ($eTicket->used_at ? $eTicket->used_at->format('d M Y H:i:s') : '-') . ')'
+            ]);
+        }
+
+        // Validate if order is paid (just in case)
+        if ($eTicket->orderItem->order->status !== 'paid') {
+            return response()->json(['success' => false, 'message' => 'Order for this ticket is not fully paid.']);
+        }
+
+        $eTicket->update([
+            'status' => 'used',
+            'used_at' => now()
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'buyer_name' => $eTicket->orderItem->order->user->name,
+            'ticket_name' => $eTicket->orderItem->ticket->name,
+            'checkin_time' => $eTicket->used_at->format('d M Y H:i:s')
+        ]);
+    }
 }

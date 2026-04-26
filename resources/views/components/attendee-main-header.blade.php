@@ -5,7 +5,7 @@
         : "https://ui-avatars.com/api/?name=" . urlencode($user->name ?? 'User') . "&background=2563EB&color=ffffff&size=128";
 @endphp
 
-<header class="bg-white border-b border-gray-200" x-data="{ attendeeMenuOpen: false }">
+<header class="bg-white border-b border-gray-200 shadow-sm" x-data="{ attendeeMenuOpen: false }">
     <div class="max-w-[1400px] mx-auto px-6 h-[80px] flex items-center justify-between gap-6">
         <div class="flex items-center gap-8">
             <a href="{{ route('home') }}" class="flex items-center gap-1 shrink-0">
