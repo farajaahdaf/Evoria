@@ -51,13 +51,13 @@ class OrganizerController extends Controller
         $user = $request->user();
 
         $eventSales = OrderItem::query()
-            ->selectRaw('events.id, events.title, SUM(order_items.quantity) as tickets_sold, SUM(order_items.subtotal) as revenue')
+            ->selectRaw('events.id, events.title, events.banner_path, events.start_time, SUM(order_items.quantity) as tickets_sold, SUM(order_items.subtotal) as revenue')
             ->join('tickets', 'tickets.id', '=', 'order_items.ticket_id')
             ->join('events', 'events.id', '=', 'tickets.event_id')
             ->join('orders', 'orders.id', '=', 'order_items.order_id')
             ->where('events.organizer_id', $user->id)
             ->where('orders.status', 'paid')
-            ->groupBy('events.id', 'events.title')
+            ->groupBy('events.id', 'events.title', 'events.banner_path', 'events.start_time')
             ->orderByDesc('revenue')
             ->get();
 
