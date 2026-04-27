@@ -92,7 +92,7 @@
     </div>
 
     <!-- Responsive Navigation Menu -->
-    <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden">
+    <div x-cloak :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden">
         <div class="pt-2 pb-3 space-y-1">
             @if(Auth::user()->role === 'organizer')
                 <x-responsive-nav-link :href="route('organizer.balance')" :active="request()->routeIs('organizer.balance')">
