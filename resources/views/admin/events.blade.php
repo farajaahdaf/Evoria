@@ -44,17 +44,10 @@
                                     {{ $event->start_time->format('M d, Y H:i') }} <br/>to<br/> {{ $event->end_time->format('M d, Y H:i') }}
                                 </td>
                                 <td class="p-4 text-right">
-                                    <div class="flex items-center justify-end space-x-2">
-                                        <a href="{{ route('events.show', $event->slug) }}" target="_blank" class="px-3 py-2 bg-[#10367d] text-white rounded-lg hover:bg-[#0c2a61] font-medium shadow-sm transition">View Detail</a>
-                                        <form action="{{ route('admin.events.approve', $event->id) }}" method="POST">
-                                            @csrf
-                                            <button type="submit" class="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium shadow-sm transition">Approve</button>
-                                        </form>
-                                        <form action="{{ route('admin.events.reject', $event->id) }}" method="POST">
-                                            @csrf
-                                            <button type="submit" onclick="return confirm('Reject this event?')" class="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium shadow-sm transition">Reject</button>
-                                        </form>
-                                    </div>
+                                    <form action="{{ route('admin.events.approve', $event->id) }}" method="POST">
+                                        @csrf
+                                        <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium shadow-sm transition">Approve</button>
+                                    </form>
                                 </td>
                             </tr>
                             @empty

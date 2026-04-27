@@ -88,14 +88,25 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::middleware('role:admin')->prefix('admin')->name('admin.')->group(function () {
         Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
+        
+        // New management routes
+        Route::get('/users', [AdminController::class, 'users'])->name('users');
+        Route::get('/all-organizers', [AdminController::class, 'allOrganizers'])->name('organizers.all');
+        Route::get('/all-events', [AdminController::class, 'allEvents'])->name('events.all');
+        Route::get('/draft-events', [AdminController::class, 'draftEvents'])->name('events.drafts');
+        Route::get('/transactions/overview', [AdminController::class, 'transactionsOverview'])->name('transactions.overview');
+        Route::get('/transactions', [AdminController::class, 'transactions'])->name('transactions');
+
+        // Existing review routes
         Route::get('/organizers', [AdminController::class, 'verifyOrganizers'])->name('organizers');
         Route::get('/organizers/{id}', [AdminController::class, 'showOrganizer'])->name('organizers.show');
         Route::post('/organizers/{id}/verify', [AdminController::class, 'approveOrganizer'])->name('organizers.verify');
         Route::post('/organizers/{id}/reject', [AdminController::class, 'rejectOrganizer'])->name('organizers.reject');
         Route::get('/events', [AdminController::class, 'approveEvents'])->name('events');
-        Route::post('/events/{id}/approve', [AdminController::class, 'publishEvent'])->name('events.approve');
-        Route::post('/events/{id}/reject', [AdminController::class, 'rejectEvent'])->name('events.reject');
-        Route::get('/transactions', [AdminController::class, 'transactions'])->name('transactions');
+        Route::get('/events/{event:slug}', [AdminController::class, 'showEvent'])->name('events.show');
+        Route::post('/events/{event:slug}/draft', [AdminController::class, 'saveEventAsDraft'])->name('events.draft');
+        Route::post('/events/{event:slug}/approve', [AdminController::class, 'approveEvent'])->name('events.approve');
+        Route::post('/events/{event:slug}/reject', [AdminController::class, 'rejectEvent'])->name('events.reject');
     });
 
     Route::middleware('role:organizer')->prefix('organizer')->name('organizer.')->group(function () {

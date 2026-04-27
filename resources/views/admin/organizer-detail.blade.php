@@ -16,7 +16,7 @@
                     <li aria-current="page">
                         <div class="flex items-center text-indigo-600">
                             <svg class="w-4 h-4 text-slate-300" fill="currentColor" viewBox="0 0 20 20"><path d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"></path></svg>
-                            <span class="ml-1 md:ml-2">#ORG-{{ str_pad($organizer->id, 4, '0', STR_PAD_LEFT) }}</span>
+                            <span class="ml-1 md:ml-2">{{ $organizer->company_name }}</span>
                         </div>
                     </li>
                 </ol>
@@ -26,7 +26,7 @@
             <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-10 gap-6">
                 <div class="max-w-2xl">
                     <h1 class="text-5xl font-extrabold text-slate-900 mb-4">
-                        Application <span class="text-indigo-600">#ORG-{{ str_pad($organizer->id, 4, '0', STR_PAD_LEFT) }}</span>
+                        Application <span class="text-indigo-600">{{ $organizer->company_name }}</span>
                     </h1>
                     <p class="text-slate-500 text-lg font-medium leading-relaxed">
                         {{ $organizer->description ?: 'Pending verification for Event Organizer registration. Review documents and verify eligibility.' }}

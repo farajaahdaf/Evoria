@@ -44,6 +44,7 @@ class EventController extends Controller
             'tickets.*.quota' => 'required|integer|min:1',
             'portfolio' => 'nullable|file|mimes:pdf,jpeg,png,jpg|max:5120',
             'proposal' => 'nullable|file|mimes:pdf|max:10240',
+            'action' => 'nullable|in:draft,submit',
         ]);
 
         if (blank($validated['latitude'] ?? null) || blank($validated['longitude'] ?? null)) {
@@ -90,13 +91,11 @@ class EventController extends Controller
                 'banner_path' => $bannerPath,
                 'portfolio_path' => $portfolioPath,
                 'proposal_path' => $proposalPath,
-                'description' => $validated['description'],
-                'start_time' => $validated['start_time'],
-                'end_time' => $validated['end_time'],
-                'location_name' => $validated['location_name'],
-                'address' => $validated['address'],
-                'latitude' => $validated['latitude'],
-                'longitude' => $validated['longitude'],
+                'description' => $request->description,
+                'start_time' => $request->start_time,
+                'end_time' => $request->end_time,
+                'location_name' => $request->location_name,
+                'address' => $request->address,
                 'status' => 'pending_review',
             ]);
 
@@ -110,7 +109,12 @@ class EventController extends Controller
             }
         });
 
-        return redirect()->route('organizer.events.index')->with('success', 'Event and tickets successfully created as Draft!');
+        return redirect()->route('organizer.events.index')->with(
+            'success',
+            $request->input('action') === 'draft'
+                ? 'Event berhasil disimpan sebagai draft.'
+                : 'Event berhasil diajukan untuk review admin.'
+        );
     }
 
     public function show(string $id)
