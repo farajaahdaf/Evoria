@@ -208,9 +208,14 @@
                                     <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
                                     Kembali ke Detail
                                 </button>
-                                <button type="submit" class="inline-flex items-center gap-2 rounded-2xl bg-primary px-10 py-4 text-sm font-extrabold text-white shadow-xl shadow-blue-200 transition hover:-translate-y-0.5 hover:bg-primary/90">
-                                    Ajukan Event Sekarang
-                                </button>
+                                <div class="flex items-center gap-3">
+                                    <button type="submit" name="action" value="draft" class="inline-flex items-center gap-2 rounded-2xl bg-slate-100 px-8 py-4 text-sm font-extrabold text-slate-700 transition hover:-translate-y-0.5 hover:bg-slate-200">
+                                        Simpan Draft
+                                    </button>
+                                    <button type="submit" name="action" value="submit" class="inline-flex items-center gap-2 rounded-2xl bg-primary px-10 py-4 text-sm font-extrabold text-white shadow-xl shadow-blue-200 transition hover:-translate-y-0.5 hover:bg-primary/90">
+                                        Ajukan Event Sekarang
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </form>

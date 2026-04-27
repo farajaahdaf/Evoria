@@ -32,9 +32,10 @@
                         </div>
                     @endif
                     <div class="absolute top-4 right-4 px-4 py-2 rounded-full text-sm font-bold uppercase tracking-wide
-                        {{ $event->status === 'published' ? 'bg-green-100 text-green-800' : 
-                           ($event->status === 'pending_review' ? 'bg-yellow-100 text-yellow-800' : 
-                           'bg-gray-100 text-gray-800') }}">
+                        {{ $event->status === 'published' ? 'bg-green-100 text-green-800' :
+                           ($event->status === 'pending_review' ? 'bg-yellow-100 text-yellow-800' :
+                           ($event->status === 'rejected' ? 'bg-red-100 text-red-800' :
+                           'bg-gray-100 text-gray-800')) }}">
                         Status: {{ str_replace('_', ' ', $event->status) }}
                     </div>
                 </div>
@@ -115,14 +116,14 @@
                             </div>
 
                             <div class="mt-8 space-y-3">
-                                <a href="{{ route('organizer.events.attendees', $event->id) }}" class="block w-full text-center py-3 bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-700 transition">Lihat Peserta / Penjualan</a>
-
                                 @if($event->status === 'draft')
                                     <form action="{{ route('organizer.events.update', $event->id) }}" method="POST">
                                         @csrf @method('PUT')
                                         <input type="hidden" name="action" value="submit">
-                                        <button type="submit" class="w-full py-3 bg-[#10367d] text-white font-bold rounded-lg hover:bg-[#0c2a61] transition">Submit to Admin for Review</button>
+                                        <button type="submit" class="w-full py-3 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 transition">Submit to Admin for Review</button>
                                     </form>
+                                @elseif($event->status === 'approved')
+                                    <!-- In a real app we might have a publish button, or admin auto-publishes. Currently logic uses 'published' -->
                                 @endif
                                 <a href="{{ route('organizer.events.index') }}" class="block w-full text-center py-3 bg-white border border-gray-300 text-gray-700 font-bold rounded-lg hover:bg-gray-50 transition">Back to Events</a>
                             </div>
