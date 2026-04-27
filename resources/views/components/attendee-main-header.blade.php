@@ -18,10 +18,7 @@
         </div>
 
         <div class="flex-1 max-w-[500px] hidden md:block">
-            <div class="relative">
-                <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-[20px]">search</span>
-                <input class="w-full h-[44px] pl-11 pr-4 bg-[#F1F3F5] border-none rounded-lg text-[13px] placeholder:text-slate-400 focus:ring-1 focus:ring-primary focus:bg-white transition-colors" placeholder="Cari event, artis, atau lokasi..." type="text"/>
-            </div>
+            <x-event-search :initial-value="request('q', '')" />
         </div>
 
         <div class="relative flex items-center gap-3">

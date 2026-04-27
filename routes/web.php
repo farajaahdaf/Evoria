@@ -7,11 +7,64 @@ use App\Http\Controllers\OrganizerApplicationController;
 use App\Http\Controllers\Organizer\EventController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    $events = \App\Models\Event::where('status', 'published')->latest()->take(6)->get();
+Route::get('/', function (Illuminate\Http\Request $request) {
+    $search = trim((string) $request->query('q', ''));
+
+    $eventsQuery = \App\Models\Event::with(['category', 'tickets'])
+        ->where('status', 'published');
+
+    if ($search !== '') {
+        $eventsQuery->where(function ($query) use ($search) {
+            $query->where('title', 'like', "%{$search}%")
+                ->orWhere('description', 'like', "%{$search}%")
+                ->orWhere('location_name', 'like', "%{$search}%")
+                ->orWhere('address', 'like', "%{$search}%")
+                ->orWhereHas('category', function ($categoryQuery) use ($search) {
+                    $categoryQuery->where('name', 'like', "%{$search}%");
+                });
+        });
+    }
+
+    $events = $eventsQuery->latest()->take($search !== '' ? 12 : 6)->get();
     $categories = \App\Models\EventCategory::all();
-    return view('welcome', compact('events', 'categories'));
+    return view('welcome', compact('events', 'categories', 'search'));
 })->name('home');
+
+Route::get('/search/suggestions', function (Illuminate\Http\Request $request) {
+    $search = trim((string) $request->query('q', ''));
+
+    if (mb_strlen($search) < 2) {
+        return response()->json([]);
+    }
+
+    $events = \App\Models\Event::with(['category', 'tickets'])
+        ->where('status', 'published')
+        ->where(function ($query) use ($search) {
+            $query->where('title', 'like', "%{$search}%")
+                ->orWhere('description', 'like', "%{$search}%")
+                ->orWhere('location_name', 'like', "%{$search}%")
+                ->orWhere('address', 'like', "%{$search}%")
+                ->orWhereHas('category', function ($categoryQuery) use ($search) {
+                    $categoryQuery->where('name', 'like', "%{$search}%");
+                });
+        })
+        ->latest()
+        ->take(6)
+        ->get();
+
+    return response()->json($events->map(function ($event) {
+        $minPrice = optional($event->tickets)->count() > 0 ? $event->tickets->min('price') : 0;
+
+        return [
+            'title' => $event->title,
+            'url' => route('events.show', $event->slug ?? $event->id),
+            'category' => $event->category?->name ?? 'Event',
+            'location' => $event->location_name,
+            'date' => optional($event->start_time)->translatedFormat('d M Y'),
+            'price' => $minPrice > 0 ? 'Rp ' . number_format($minPrice, 0, ',', '.') : 'Gratis',
+        ];
+    })->values());
+})->name('events.search-suggestions');
 
 Route::get('/kategori/{slug}', function (\Illuminate\Http\Request $request, $slug) {
     // Cari berdasarkan slug, jika tidak ada fallback ke pencarian nama
@@ -22,10 +75,83 @@ Route::get('/kategori/{slug}', function (\Illuminate\Http\Request $request, $slu
     }
 
     $sort = $request->query('sort', 'latest'); // latest | price_asc | price_desc
+    if (! in_array($sort, ['latest', 'price_asc', 'price_desc'], true)) {
+        $sort = 'latest';
+    }
+
+    $city = trim((string) $request->query('city', ''));
+
+    $extractCity = function ($event) {
+        $text = trim(collect([$event->address, $event->location_name])->filter()->implode(', '));
+
+        if ($text === '') {
+            return null;
+        }
+
+        $knownCities = [
+            'Jakarta Selatan',
+            'Jakarta Timur',
+            'Jakarta Barat',
+            'Jakarta Pusat',
+            'Jakarta Utara',
+            'Yogyakarta',
+            'Pontianak',
+            'Tangerang',
+            'Surakarta',
+            'Semarang',
+            'Surabaya',
+            'Bandung',
+            'Jakarta',
+            'Sleman',
+            'Bekasi',
+            'Depok',
+            'Bogor',
+            'Medan',
+            'Malang',
+            'Solo',
+        ];
+
+        foreach ($knownCities as $knownCity) {
+            if (\Illuminate\Support\Str::contains(\Illuminate\Support\Str::lower($text), \Illuminate\Support\Str::lower($knownCity))) {
+                return $knownCity;
+            }
+        }
+
+        $ignoredWords = ['jalan', 'jl.', 'no.', 'hall', 'stadion', 'theater', 'ballroom', 'convention', 'exhibition', 'arena', 'banten', 'dki jakarta'];
+
+        return collect(preg_split('/,/', $text))
+            ->map(fn ($part) => trim(preg_replace('/\s+/', ' ', $part)))
+            ->filter()
+            ->reverse()
+            ->first(function ($part) use ($ignoredWords) {
+                $lowerPart = \Illuminate\Support\Str::lower($part);
+
+                return ! collect($ignoredWords)->contains(fn ($word) => \Illuminate\Support\Str::contains($lowerPart, $word));
+            });
+    };
+
+    $cityEvents = \App\Models\Event::query()
+        ->where('category_id', optional($category)->id)
+        ->where('status', 'published')
+        ->get(['location_name', 'address']);
+
+    $cityOptions = $cityEvents
+        ->map($extractCity)
+        ->filter()
+        ->unique()
+        ->sortBy(fn ($name) => \Illuminate\Support\Str::lower($name))
+        ->values();
 
     $query = \App\Models\Event::with('tickets', 'organizer')
                 ->where('category_id', optional($category)->id)
                 ->where('status', 'published');
+
+    if ($city !== '') {
+        $query->where(function ($cityQuery) use ($city) {
+            $cityQuery->where('address', 'like', "%{$city}%")
+                ->orWhere('location_name', 'like', "%{$city}%");
+        });
+    }
 
     if ($sort === 'price_asc' || $sort === 'price_desc') {
         // Join dengan subquery untuk mendapatkan harga minimum tiket
@@ -44,9 +170,12 @@ Route::get('/kategori/{slug}', function (\Illuminate\Http\Request $request, $slu
         $query->latest();
     }
 
-    $events = $query->paginate(6)->appends(['sort' => $sort]);
+    $events = $query->paginate(6)->appends([
+        'sort' => $sort,
+        'city' => $city,
+    ]);
                 
-    return view('categories.show', compact('category', 'events', 'sort'));
+    return view('categories.show', compact('category', 'events', 'sort', 'city', 'cityOptions'));
 })->name('category.show');
 
 Route::get('/event/{slug}', function ($slug) {
