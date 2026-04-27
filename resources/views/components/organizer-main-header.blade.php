@@ -13,7 +13,7 @@
             </a>
 
             <nav class="hidden lg:flex items-center gap-6">
-                <a class="text-[14px] font-bold text-slate-900 hover:text-primary transition-colors" href="{{ route('organizer.dashboard') }}">Dashboard Organizer</a>
+                <a class="text-[14px] font-bold text-slate-900 hover:text-primary transition-colors" href="{{ route('organizer.balance') }}">Saldo</a>
                 <a class="text-[14px] font-bold text-slate-900 hover:text-primary transition-colors" href="{{ route('organizer.events.index') }}">Event Saya</a>
                 <a class="text-[14px] font-bold text-slate-900 hover:text-primary transition-colors" href="{{ route('organizer.events.create') }}">Buat Event</a>
             </nav>
@@ -56,6 +56,7 @@
                 x-transition:leave-end="opacity-0 -translate-y-1 scale-95"
                 class="absolute right-0 top-14 w-52 bg-white border border-slate-200 rounded-xl shadow-lg py-2 z-50"
             >
+                <a href="{{ route('organizer.balance') }}" class="block px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:text-primary transition-colors">Saldo</a>
                 <a href="{{ route('organizer.events.index') }}" class="block px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:text-primary transition-colors">Event Saya</a>
                 <a href="{{ route('organizer.events.create') }}" class="block px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:text-primary transition-colors">Buat Event</a>
                 <a href="{{ route('profile.edit') }}" class="block px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:text-primary transition-colors">Profile</a>
