@@ -57,6 +57,7 @@ class MidtransPaymentController extends Controller
 
             if ($mappedStatus === 'paid' && $previousStatus !== 'paid') {
                 $this->generateETickets($order);
+                $this->creditOrganizerBalance($order);
             }
         });
     }
@@ -102,6 +103,43 @@ class MidtransPaymentController extends Controller
                     'ticket_code' => 'TCKT-' . Str::upper(Str::random(12)),
                 ]);
             }
+        }
+    }
+
+    protected function creditOrganizerBalance(Order $order): void
+    {
+        $order->loadMissing('orderItems.ticket.event');
+
+        $creditsByOrganizer = [];
+
+        foreach ($order->orderItems as $item) {
+            $organizerId = $item->ticket?->event?->organizer_id;
+
+            if (! $organizerId) {
+                continue;
+            }
+
+            $creditsByOrganizer[$organizerId] = ($creditsByOrganizer[$organizerId] ?? 0) + (float) $item->subtotal;
+        }
+
+        if (empty($creditsByOrganizer)) {
+            return;
+        }
+
+        $organizers = \App\Models\User::query()
+            ->whereIn('id', array_keys($creditsByOrganizer))
+            ->lockForUpdate()
+            ->get()
+            ->keyBy('id');
+
+        foreach ($creditsByOrganizer as $organizerId => $creditAmount) {
+            $organizer = $organizers->get($organizerId);
+
+            if (! $organizer) {
+                continue;
+            }
+
+            $organizer->increment('balance', $creditAmount);
         }
     }
 }

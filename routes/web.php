@@ -111,6 +111,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::middleware('role:organizer')->prefix('organizer')->name('organizer.')->group(function () {
         Route::get('/dashboard', [OrganizerController::class, 'dashboard'])->name('dashboard');
+        Route::get('/balance', [OrganizerController::class, 'balance'])->name('balance');
+        Route::post('/withdraw', [OrganizerController::class, 'withdraw'])->name('withdraw');
         Route::get('/events/{event}/attendees', [EventController::class, 'attendees'])->name('events.attendees');
         Route::get('/events/{event}/checkin', [EventController::class, 'checkinView'])->name('events.checkin');
         Route::post('/events/{event}/checkin', [EventController::class, 'checkin'])->name('events.checkin.scan');
