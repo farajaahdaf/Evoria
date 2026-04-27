@@ -64,10 +64,7 @@
                 
                 <!-- Search -->
                 <div class="flex-1 max-w-[500px] hidden md:block">
-                    <div class="relative">
-                        <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-[20px]">search</span>
-                        <input class="w-full h-[44px] pl-11 pr-4 bg-[#F1F3F5] border-none rounded-lg text-[13px] placeholder:text-slate-400 focus:ring-1 focus:ring-primary focus:bg-white transition-colors" placeholder="Cari event, artis, atau lokasi..." type="text"/>
-                    </div>
+                    <x-event-search :initial-value="$search ?? ''" />
                 </div>
                 
                 <!-- Actions -->
@@ -237,7 +234,14 @@
 
         <!-- Featured Events -->
         <section>
-            <h2 class="text-[28px] font-bold text-black mb-6 tracking-tight">Featured Events</h2>
+            <div class="mb-6 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                <h2 class="text-[28px] font-bold text-black tracking-tight">
+                    {{ filled($search ?? '') ? 'Hasil Pencarian' : 'Featured Events' }}
+                </h2>
+                @if(filled($search ?? ''))
+                    <a href="{{ route('home') }}" class="text-[13px] font-bold text-primary hover:underline">Reset pencarian</a>
+                @endif
+            </div>
             
             @if(isset($events) && count($events) > 0)
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -266,7 +270,9 @@
                 </div>
             @else
                 <div class="bg-white rounded-[16px] h-[320px] flex items-center justify-center shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
-                    <p class="text-[24px] italic font-medium text-slate-800">Belum ada event untuk saat ini</p>
+                    <p class="text-[24px] italic font-medium text-slate-800">
+                        {{ filled($search ?? '') ? 'Event tidak ditemukan' : 'Belum ada event untuk saat ini' }}
+                    </p>
                 </div>
             @endif
         </section>

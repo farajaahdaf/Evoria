@@ -62,10 +62,7 @@
                 
                 <!-- Search -->
                 <div class="flex-1 max-w-[500px] hidden md:block">
-                    <div class="relative">
-                        <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-[20px]">search</span>
-                        <input class="w-full h-[44px] pl-11 pr-4 bg-[#F1F3F5] border-none rounded-lg text-[13px] placeholder:text-slate-400 focus:ring-1 focus:ring-primary focus:bg-white transition-colors" placeholder="Cari event, artis, atau lokasi..." type="text"/>
-                    </div>
+                    <x-event-search :initial-value="request('q', '')" />
                 </div>
                 
                 <!-- Actions -->
@@ -109,36 +106,72 @@
         <section>
             @php
                 $currentSort = $sort ?? 'latest';
+                $currentCity = $city ?? '';
                 $filterOptions = [
                     'latest'     => ['label' => 'Terbaru',         'icon' => 'schedule'],
                     'price_desc' => ['label' => 'Harga Tertinggi', 'icon' => 'arrow_upward'],
                     'price_asc'  => ['label' => 'Harga Terendah',  'icon' => 'arrow_downward'],
                 ];
             @endphp
-            <div class="flex items-center gap-3 flex-wrap">
-                <span class="text-[13px] font-bold text-slate-500 mr-1">Urutkan:</span>
-                @foreach($filterOptions as $value => $option)
-                    @php
-                        $isActive = $currentSort === $value;
-                    @endphp
-                    <a href="{{ request()->fullUrlWithQuery(['sort' => $value]) }}"
-                       class="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-[13px] font-bold border transition-all duration-200
-                              {{ $isActive
-                                  ? 'bg-[#2563EB] text-white border-[#2563EB] shadow-md shadow-blue-200'
-                                  : 'bg-white text-slate-600 border-slate-200 hover:border-[#2563EB] hover:text-[#2563EB]' }}">
-                        <span class="material-symbols-outlined text-[15px]">{{ $option['icon'] }}</span>
-                        {{ $option['label'] }}
-                    </a>
-                @endforeach
+            <div class="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:flex-row md:items-center md:justify-between">
+                <div class="flex items-center gap-3 flex-wrap">
+                    <span class="text-[13px] font-bold text-slate-500 mr-1">Urutkan:</span>
+                    @foreach($filterOptions as $value => $option)
+                        @php
+                            $isActive = $currentSort === $value;
+                        @endphp
+                        <a href="{{ request()->fullUrlWithQuery(['sort' => $value]) }}"
+                           class="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-[13px] font-bold border transition-all duration-200
+                                  {{ $isActive
+                                      ? 'bg-[#2563EB] text-white border-[#2563EB] shadow-md shadow-blue-200'
+                                      : 'bg-white text-slate-600 border-slate-200 hover:border-[#2563EB] hover:text-[#2563EB]' }}">
+                            <span class="material-symbols-outlined text-[15px]">{{ $option['icon'] }}</span>
+                            {{ $option['label'] }}
+                        </a>
+                    @endforeach
+                </div>
 
-                @if($currentSort !== 'latest')
-                    <a href="{{ request()->fullUrlWithQuery(['sort' => 'latest']) }}"
-                       class="inline-flex items-center gap-1 px-3 py-2 rounded-full text-[12px] font-bold text-slate-400 hover:text-red-500 border border-transparent hover:border-red-200 transition-all duration-200 ml-1">
-                        <span class="material-symbols-outlined text-[14px]">close</span>
-                        Reset
-                    </a>
-                @endif
+                <form action="{{ url()->current() }}" method="GET" class="flex w-full flex-col gap-2 sm:flex-row md:max-w-md">
+                    <input type="hidden" name="sort" value="{{ $currentSort }}">
+                    <div class="relative flex-1">
+                        <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-[20px]">location_on</span>
+                        <input
+                            type="search"
+                            name="city"
+                            value="{{ $currentCity }}"
+                            list="available-cities"
+                            placeholder="Cari kota..."
+                            autocomplete="off"
+                            class="h-11 w-full rounded-full border border-slate-200 bg-slate-50 pl-11 pr-4 text-[13px] font-semibold text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#2563EB] focus:bg-white focus:ring-4 focus:ring-blue-100"
+                        >
+                        <datalist id="available-cities">
+                            @foreach($cityOptions as $cityOption)
+                                <option value="{{ $cityOption }}"></option>
+                            @endforeach
+                        </datalist>
+                    </div>
+                    <button type="submit" class="inline-flex h-11 items-center justify-center gap-1.5 rounded-full bg-slate-900 px-5 text-[13px] font-bold text-white transition hover:bg-[#2563EB]">
+                        <span class="material-symbols-outlined text-[16px]">search</span>
+                        Filter
+                    </button>
+                </form>
             </div>
+
+            @if($currentSort !== 'latest' || $currentCity !== '')
+                <div class="mt-3 flex items-center gap-2">
+                    @if($currentCity !== '')
+                        <span class="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1.5 text-[12px] font-bold text-[#2563EB]">
+                            <span class="material-symbols-outlined text-[14px]">location_on</span>
+                            {{ $currentCity }}
+                        </span>
+                    @endif
+                    <a href="{{ url()->current() }}"
+                       class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[12px] font-bold text-slate-400 hover:text-red-500 border border-transparent hover:border-red-200 transition-all duration-200">
+                        <span class="material-symbols-outlined text-[14px]">close</span>
+                        Reset Filter
+                    </a>
+                </div>
+            @endif
         </section>
 
         <!-- Events Grid -->
@@ -227,7 +260,13 @@
                 <div class="bg-white rounded-[16px] h-[320px] flex flex-col items-center justify-center shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-slate-100 text-center px-6">
                     <span class="material-symbols-outlined text-slate-300 text-[64px] mb-4">search_off</span>
                     <p class="text-[20px] font-bold text-slate-800 mb-2">Belum ada event tersedia</p>
-                    <p class="text-[15px] font-medium text-slate-500">Belum ada listing event untuk kategori ini. Coba periksa kembali nanti.</p>
+                    <p class="text-[15px] font-medium text-slate-500">
+                        @if($currentCity !== '')
+                            Tidak ada event {{ $categoryName }} di {{ $currentCity }}. Coba kota lain yang tersedia di pencarian.
+                        @else
+                            Belum ada listing event untuk kategori ini. Coba periksa kembali nanti.
+                        @endif
+                    </p>
                 </div>
             @endif
         </section>
