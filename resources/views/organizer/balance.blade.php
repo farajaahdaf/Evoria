@@ -124,8 +124,19 @@
                                     <tr class="hover:bg-slate-50/70 transition-colors group">
                                         <td class="p-4 pl-6">
                                             <div class="flex items-center gap-4">
+                                                @php
+                                                    $fallbackBanner = 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80';
+                                                    $bannerUrl = $fallbackBanner;
+                                                    if ($sale->banner_path) {
+                                                        if (str_starts_with($sale->banner_path, 'http')) {
+                                                            $bannerUrl = $sale->banner_path;
+                                                        } else {
+                                                            $bannerUrl = asset('storage/' . $sale->banner_path);
+                                                        }
+                                                    }
+                                                @endphp
                                                 <div class="w-10 h-10 bg-slate-200 rounded-lg overflow-hidden flex-shrink-0 border border-slate-100 shadow-sm">
-                                                    <img src="{{ $sale->banner_path ? asset('storage/' . $sale->banner_path) : 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80' }}" alt="{{ $sale->title }}" class="w-full h-full object-cover">
+                                                    <img src="{{ $bannerUrl }}" alt="{{ $sale->title }}" class="w-full h-full object-cover">
                                                 </div>
                                                 <div>
                                                     <p class="font-bold text-sm text-slate-900 group-hover:text-[#4F46E5] transition">{{ $sale->title }}</p>
