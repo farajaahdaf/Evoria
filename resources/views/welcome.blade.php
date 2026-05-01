@@ -4,14 +4,14 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ config('app.name', 'Evoria') }} - Beranda</title>
-    
+
     <!-- Fonts & Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
-    
+
     <!-- Tailwind CSS (Vite) -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    
+
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <script>
         tailwind.config = {
@@ -47,13 +47,13 @@
         <!-- Navigasi Atas (header utama default dengan Buat Event / Daftar / Masuk) -->
         <header class="bg-white border-b border-gray-200">
             <div class="max-w-[1400px] mx-auto px-6 h-[80px] flex items-center justify-between gap-6">
-                
+
                 <div class="flex items-center gap-8">
                     <!-- Logo -->
                     <a href="/" class="flex items-center gap-1 shrink-0">
                         <x-application-logo class="h-10 w-auto" />
                     </a>
-                    
+
                     <!-- Links -->
                     <nav class="hidden lg:flex items-center gap-6">
                         <a class="text-[14px] font-bold text-slate-900 hover:text-primary transition-colors" href="#">Beli Tiket</a>
@@ -61,12 +61,12 @@
                         <a class="text-[14px] font-bold text-slate-900 hover:text-primary transition-colors" href="#">Bantuan</a>
                     </nav>
                 </div>
-                
+
                 <!-- Search -->
                 <div class="flex-1 max-w-[500px] hidden md:block">
                     <x-event-search :initial-value="$search ?? ''" />
                 </div>
-                
+
                 <!-- Actions -->
                 <div class="flex items-center gap-4">
                     @php
@@ -87,7 +87,7 @@
                         <span class="material-symbols-outlined rounded-md bg-white text-[22px]">calendar_add_on</span>
                         Buat Event
                     </a>
-                    
+
                     @if (Route::has('login'))
                         @auth
                             <a href="{{ url('/dashboard') }}" class="px-6 py-[10px] text-[14px] font-bold border border-primary text-primary rounded-lg hover:bg-primary/5 transition-colors">Dashboard</a>
@@ -104,7 +104,7 @@
     @endif
 
     <main class="max-w-[1200px] mx-auto px-6 py-10 space-y-12">
-        
+
         <!-- Hero Section / Banner Carousel -->
         <section>
             @php
@@ -242,7 +242,7 @@
                     <a href="{{ route('home') }}" class="text-[13px] font-bold text-primary hover:underline">Reset pencarian</a>
                 @endif
             </div>
-            
+
             @if(isset($events) && count($events) > 0)
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     @foreach($events as $event)
@@ -280,7 +280,7 @@
         <!-- Kategori Event -->
         <section>
             <h2 class="text-[28px] font-bold text-black mb-6 tracking-tight">Kategori Event</h2>
-            
+
             @if(isset($categories) && $categories->count() > 0)
                 @php
                     // Mapping icon berdasarkan keyword nama kategori (English & Indonesian)
@@ -363,15 +363,15 @@
         <div class="max-w-[1200px] mx-auto px-6 py-10 flex flex-col md:flex-row justify-between items-center gap-6">
             <div class="flex items-center gap-8">
                 <a href="#" class="text-[14px] font-bold hover:text-slate-300 transition-colors">About Us</a>
-                <a href="#" class="text-[14px] font-bold hover:text-slate-300 transition-colors">Carrer</a>
+                <a href="#" class="text-[14px] font-bold hover:text-slate-300 transition-colors">Career</a>
                 <a href="#" class="text-[14px] font-bold hover:text-slate-300 transition-colors">FAQ</a>
                 <a href="#" class="text-[14px] font-bold hover:text-slate-300 transition-colors">Contact</a>
             </div>
-            
+
             <div>
                 <x-application-logo class="h-10 w-auto" />
             </div>
-            
+
             <div class="flex items-center gap-4">
                 <a href="#" class="w-8 h-8 rounded-full border border-white/30 flex items-center justify-center hover:border-white transition-colors">
                     <span class="material-symbols-outlined text-[16px]">play_arrow</span>
@@ -413,7 +413,7 @@
                 <p class="text-white/80 text-xs">Asisten tiket cerdas Anda</p>
             </div>
         </div>
-        
+
         <!-- Messages Area -->
         <div class="flex-1 bg-slate-50 p-5 overflow-y-auto space-y-5" id="chat-messages">
             <!-- Welcome Bot Message -->
@@ -425,7 +425,7 @@
                     Halo! Saya Evoria AI. Coba beri perintah seperti <strong>"Cariin konser musik gratis bulan ini dong!"</strong>
                 </div>
             </div>
-            
+
             <template x-for="message in messages">
                 <div :class="message.role === 'user' ? 'flex justify-end' : 'flex gap-2'">
                     <!-- Avatar for Bot -->
@@ -434,8 +434,8 @@
                             <span class="material-symbols-outlined text-primary text-sm">smart_toy</span>
                         </div>
                     </template>
-                    
-                    <div :class="message.role === 'user' ? 'bg-primary text-white rounded-tr-sm' : 'bg-white border border-slate-100 text-slate-700 rounded-tl-sm prose prose-sm max-w-none prose-a:text-primary prose-a:font-bold prose-strong:text-slate-900'" 
+
+                    <div :class="message.role === 'user' ? 'bg-primary text-white rounded-tr-sm' : 'bg-white border border-slate-100 text-slate-700 rounded-tl-sm prose prose-sm max-w-none prose-a:text-primary prose-a:font-bold prose-strong:text-slate-900'"
                          class="rounded-2xl px-4 py-3 max-w-[85%] shadow-sm text-sm" x-html="formatMessage(message.content)">
                     </div>
                 </div>
@@ -472,29 +472,30 @@
                 messages: [],
                 newMessage: '',
                 loading: false,
-                
+
                 async sendMessage() {
                     if (!this.newMessage.trim() || this.loading) return;
-                    
+
                     let msg = { role: 'user', content: this.newMessage };
                     this.messages.push(msg);
                     let prompt = this.newMessage;
                     this.newMessage = '';
                     this.loading = true;
-                    
+
                     this.scrollToBottom();
 
                     try {
-                        const res = await fetch('/chat', {
+                        const res = await fetch('{{ route('chat') }}', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
+                                'Accept': 'application/json',
                                 'X-CSRF-TOKEN': '{{ csrf_token() }}'
                             },
                             body: JSON.stringify({ prompt: prompt })
                         });
                         const data = await res.json();
-                        
+
                         this.messages.push({ role: 'assistant', content: data.response });
                     } catch(e) {
                         this.messages.push({ role: 'assistant', content: "Momen sibuk, koneksi AI terputus. Coba lagi." });
@@ -503,7 +504,7 @@
                         this.scrollToBottom();
                     }
                 },
-                
+
                 scrollToBottom() {
                     setTimeout(() => {
                         const container = document.getElementById('chat-messages');
@@ -515,7 +516,8 @@
                     if (!text) return '';
                     let html = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
                     html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-                    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-primary hover:underline font-bold">$1</a>');
+                    html = html.replace(/\[((?:[^\[\]]|\[[^\]]*\])*)\]\((https?:\/\/[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-bold">$1</a>');
+                    html = html.replace(/(^|[\s>])(https?:\/\/[^\s<]+)/g, '$1<a href="$2" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-bold">$2</a>');
                     html = html.replace(/\n/g, '<br>');
                     return html;
                 }
