@@ -9,6 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
@@ -155,12 +156,36 @@
                                     
                                     @if($order->status === 'paid' && $item->eTickets && $item->eTickets->count() > 0)
                                         <div class="mt-4 pt-4 border-t border-slate-100">
-                                            <p class="text-xs text-slate-500 mb-2">E-Ticket Codes</p>
-                                            <div class="flex flex-wrap gap-2">
+                                            <p class="text-xs text-slate-500 mb-3 font-semibold">Your E-Tickets</p>
+                                            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                                                 @foreach($item->eTickets as $et)
-                                                    <span class="px-3 py-1.5 bg-slate-100 border border-slate-200 rounded-lg text-sm font-mono text-slate-700 font-bold">
-                                                        {{ $et->ticket_code }}
-                                                    </span>
+                                                    <div class="bg-white border text-center rounded-xl p-4 flex flex-col items-center shadow-sm relative overflow-hidden">
+                                                        <div class="relative w-[150px] h-[150px] flex items-center justify-center bg-white p-2 rounded-lg border border-slate-100 mb-3">
+                                                            <div id="qr-{{ $et->id }}"></div>
+                                                            @if(isset($et->status) && $et->status === 'used')
+                                                                <div class="absolute inset-0 bg-white/80 flex items-center justify-center z-10">
+                                                                    <span class="bg-slate-800 text-white text-[10px] font-bold px-2 py-1 rounded rotate-[-15deg] whitespace-nowrap shadow-md">SUDAH DIGUNAKAN</span>
+                                                                </div>
+                                                            @endif
+                                                        </div>
+                                                        <p class="text-[11px] font-mono text-slate-500 mb-1">{{ $et->ticket_code }}</p>
+                                                        <p class="text-sm font-bold text-slate-900 mb-2">{{ $item->ticket->name ?? 'Ticket' }}</p>
+                                                        
+                                                        @php
+                                                            $statusClass = 'bg-slate-100 text-slate-700';
+                                                            $statusText = $et->status ?? 'active';
+                                                            if ($statusText === 'active') {
+                                                                $statusClass = 'bg-green-100 text-green-700';
+                                                            } elseif ($statusText === 'used') {
+                                                                $statusClass = 'bg-slate-200 text-slate-500 line-through';
+                                                            } elseif ($statusText === 'cancelled') {
+                                                                $statusClass = 'bg-red-100 text-red-700';
+                                                            }
+                                                        @endphp
+                                                        <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider {{ $statusClass }}">
+                                                            {{ $statusText }}
+                                                        </span>
+                                                    </div>
                                                 @endforeach
                                             </div>
                                         </div>
@@ -249,5 +274,37 @@
             }
         </script>
     @endif
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const tickets = [
+            @foreach($orders as $order)
+                @if($order->status === 'paid')
+                    @foreach($order->orderItems as $item)
+                        @if($item->eTickets && $item->eTickets->count() > 0)
+                            @foreach($item->eTickets as $et)
+                                { id: '{{ $et->id }}', code: '{{ $et->ticket_code }}' },
+                            @endforeach
+                        @endif
+                    @endforeach
+                @endif
+            @endforeach
+        ];
+        
+        tickets.forEach(function(t) {
+            let container = document.getElementById('qr-' + t.id);
+            if(container) {
+                new QRCode(container, {
+                    text: t.code,
+                    width: 150,
+                    height: 150,
+                    colorDark: '#10367d',
+                    colorLight: '#ffffff'
+                });
+            }
+        });
+    });
+    </script>
 </body>
 </html>

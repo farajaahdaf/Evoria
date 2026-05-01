@@ -73,6 +73,11 @@
                         <div class="mt-auto flex space-x-2 pt-4 border-t border-gray-100">
                             <a href="{{ route('organizer.events.show', $event->id) }}" class="flex-1 text-center py-2 bg-gray-50 text-gray-700 font-medium rounded hover:bg-gray-100 transition">View</a>
                             
+                            <a href="{{ route('organizer.events.checkin', $event->id) }}"
+                               class="flex-1 inline-flex items-center justify-center px-3 py-1.5 rounded bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition">
+                                Scan Check-in
+                            </a>
+
                             @if($event->status === 'draft')
                             <form action="{{ route('organizer.events.update', $event->id) }}" method="POST" class="flex-1">
                                 @csrf @method('PUT')

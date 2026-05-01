@@ -18,7 +18,7 @@
                 </div>
                 <div class="relative z-10 w-full md:w-auto">
                     <div class="flex items-center gap-3 mb-2">
-                        <h3 class="text-3xl lg:text-4xl font-black">Welcome back, {{ auth()->user()->name }}! 🚀</h3>
+                        <h3 class="text-3xl lg:text-4xl font-black">Welcome back, {{ auth()->user()->name }}!</h3>
                     </div>
                     <div class="flex items-center gap-3 mt-3">
                         <span class="text-blue-100 text-lg">Manage your events, view your sales, and grow your audience.</span>
@@ -160,22 +160,29 @@
                                 <svg class="w-5 h-5 text-slate-400 group-hover:text-indigo-500 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
                             </a>
                             
-                            <!-- Safe checkin route calculation -->
-                            @php
-                                $checkinUrl = route('organizer.events.index');
-                                if (isset($recentEvents) && $recentEvents->count() > 0) {
-                                    $checkinUrl = route('organizer.events.checkin', $recentEvents->first()->id);
-                                }
-                            @endphp
-                            <a href="{{ $checkinUrl }}" class="group flex items-center p-4 border border-slate-200 rounded-xl hover:border-emerald-500 hover:shadow-md transition">
-                                <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition mr-4">
-                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm14 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path></svg>
+                            <a href="{{ route('organizer.events.index') }}" 
+                               class="group flex items-center p-4 border border-slate-200 
+                               rounded-xl hover:border-emerald-500 hover:shadow-md transition">
+                                <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 
+                                            flex items-center justify-center mr-4 flex-shrink-0 
+                                            group-hover:bg-emerald-500 group-hover:text-white transition">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" 
+                                         viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" 
+                                              stroke-width="2" 
+                                              d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 3.5V16M4 6h16M4 10h16">
+                                        </path>
+                                    </svg>
                                 </div>
-                                <div class="flex-1">
+                                <div class="flex-1 min-w-0">
                                     <h5 class="font-bold text-slate-900">Scan QR Check-in</h5>
-                                    <p class="text-xs text-slate-500">Check-in your attendees</p>
+                                    <p class="text-sm text-slate-500">Pilih event untuk mulai check-in</p>
                                 </div>
-                                <svg class="w-5 h-5 text-slate-400 group-hover:text-emerald-500 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                                <svg class="w-5 h-5 text-slate-400 group-hover:text-emerald-500 transition flex-shrink-0" 
+                                     fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" 
+                                          stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                </svg>
                             </a>
                         </div>
                     </div>
