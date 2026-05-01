@@ -42,6 +42,12 @@ return [
         'is_production' => env('MIDTRANS_IS_PRODUCTION', false),
     ],
 
+    'openai' => [
+        'api_key' => env('OPENAI_API_KEY'),
+        'chatbot_filter_model' => env('OPENAI_CHATBOT_FILTER_MODEL', 'gpt-4o-mini'),
+        'chatbot_response_model' => env('OPENAI_CHATBOT_RESPONSE_MODEL', 'gpt-4o-mini'),
+    ],
+
     'google_maps' => [
         'web_api_key' => env('GOOGLE_MAPS_WEB_API_KEY'),
         'server_api_key' => env('GOOGLE_MAPS_SERVER_API_KEY'),

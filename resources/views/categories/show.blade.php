@@ -393,10 +393,11 @@
                     this.scrollToBottom();
 
                     try {
-                        const res = await fetch('/chat', {
+                        const res = await fetch('{{ route('chat') }}', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
+                                'Accept': 'application/json',
                                 'X-CSRF-TOKEN': '{{ csrf_token() }}'
                             },
                             body: JSON.stringify({ prompt: prompt })
@@ -422,9 +423,10 @@
                 formatMessage(text) {
                     if (!text) return '';
                     let html = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-                    html = html.replace(/\\*\\*(.*?)\\*\\*/g, '<strong>$1</strong>');
-                    html = html.replace(/\\[([^\\]]+)\\]\\(([^)]+)\\)/g, '<a href=\"$2\" class=\"text-primary hover:underline font-bold\">$1</a>');
-                    html = html.replace(/\\n/g, '<br>');
+                    html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                    html = html.replace(/\[((?:[^\[\]]|\[[^\]]*\])*)\]\((https?:\/\/[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-bold">$1</a>');
+                    html = html.replace(/(^|[\s>])(https?:\/\/[^\s<]+)/g, '$1<a href="$2" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-bold">$2</a>');
+                    html = html.replace(/\n/g, '<br>');
                     return html;
                 }
             }));
