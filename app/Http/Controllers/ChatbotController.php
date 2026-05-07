@@ -20,7 +20,7 @@ class ChatbotController extends Controller
 
         if (empty($apiKey)) {
             return response()->json([
-                'response' => 'Evoria AI belum aktif karena OPENAI_API_KEY belum diatur di file .env.',
+                'response' => 'Evoria AI belum aktif.',
             ]);
         }
 
@@ -37,11 +37,18 @@ class ChatbotController extends Controller
             $reply = 'Halo! Saya bisa bantu carikan event berdasarkan kota, kategori, tanggal, harga, atau menampilkan semua event yang tersedia di Evoria.';
             $this->logChat($request, $prompt, $reply);
 
-            return response()->json(['response' => $reply]);
+            return response()->json([
+                'response' => $reply,
+                // TEMP CHATBOT DEBUG: hapus debug_ai_filters setelah selesai inspect JSON filter dari OpenAI.
+                'debug_ai_filters' => [
+                    'raw_from_openai' => $aiFilters,
+                    'normalized' => $filters,
+                ],
+            ]);
         }
 
         if (($filters['intent'] ?? 'event_search') === 'general_help') {
-            return $this->answerGeneralQuestion($request, $prompt, $apiKey);
+            return $this->answerGeneralQuestion($request, $prompt, $apiKey, $aiFilters, $filters);
         }
 
         [$events, $fallbackEvents, $totalMatches] = $this->findEvents($filters);
@@ -50,7 +57,14 @@ class ChatbotController extends Controller
             $reply = $this->generateAiEventAnswer($prompt, $filters, $events, $fallbackEvents, $totalMatches, $apiKey);
             $this->logChat($request, $prompt, $reply);
 
-            return response()->json(['response' => $reply]);
+            return response()->json([
+                'response' => $reply,
+                // TEMP CHATBOT DEBUG: hapus debug_ai_filters setelah selesai inspect JSON filter dari OpenAI.
+                'debug_ai_filters' => [
+                    'raw_from_openai' => $aiFilters,
+                    'normalized' => $filters,
+                ],
+            ]);
         } catch (\Throwable) {
             return response()->json([
                 'response' => 'Maaf, layanan AI sedang bermasalah. Coba lagi sebentar lagi.',
@@ -274,7 +288,7 @@ fallback_events: " . json_encode($this->buildEventsPayload($fallbackEvents));
         return $reply;
     }
 
-    private function answerGeneralQuestion(Request $request, string $prompt, string $apiKey)
+    private function answerGeneralQuestion(Request $request, string $prompt, string $apiKey, array $aiFilters = [], array $filters = [])
     {
         $systemPrompt = "You are Evoria AI Assistant. Answer in Indonesian, concise and helpful.
         Evoria is an event ticket marketplace. Users can search events by category, city, price, date, artist/event name, open event detail, choose available ticket quantity, then checkout.
@@ -309,7 +323,14 @@ fallback_events: " . json_encode($this->buildEventsPayload($fallbackEvents));
 
         $this->logChat($request, $prompt, $reply);
 
-        return response()->json(['response' => $reply]);
+        return response()->json([
+            'response' => $reply,
+            // TEMP CHATBOT DEBUG: hapus debug_ai_filters setelah selesai inspect JSON filter dari OpenAI.
+            'debug_ai_filters' => [
+                'raw_from_openai' => $aiFilters,
+                'normalized' => $filters,
+            ],
+        ]);
     }
 
     private function logChat(Request $request, string $prompt, string $reply): void

@@ -123,19 +123,81 @@ class EventController extends Controller
         return view('organizer.events.show', compact('event'));
     }
 
+    public function edit(string $id)
+    {
+        $event = auth()->user()->events()->with('tickets', 'category')->findOrFail($id);
+
+        if ($event->status === 'published') {
+            return back()->with('error', 'Event yang sudah published tidak dapat diedit.');
+        }
+
+        $categories = EventCategory::all();
+        return view('organizer.events.edit', compact('event', 'categories'));
+    }
+
     public function update(Request $request, string $id)
     {
-        $event = auth()->user()->events()->findOrFail($id);
-        
+        $event = auth()->user()->events()->with('tickets')->findOrFail($id);
+
         if ($event->status === 'published') {
             return back()->with('error', 'Cannot edit published events directly.');
         }
 
-        $event->update([
-            'status' => $request->action === 'submit' ? 'pending_review' : 'draft'
+        if ($request->input('action') === 'submit') {
+            $event->update(['status' => 'pending_review']);
+            return redirect()->route('organizer.events.index')->with('success', 'Event berhasil diajukan untuk review.');
+        }
+
+        $validated = $request->validate([
+            'title'         => 'required|string|max:255',
+            'category_id'   => 'required|exists:event_categories,id',
+            'banner'        => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'description'   => 'required|string',
+            'start_time'    => 'required|date',
+            'end_time'      => 'required|date|after:start_time',
+            'location_name' => 'required|string|max:255',
+            'address'       => 'nullable|string',
+            'tickets'       => 'nullable|array',
+            'tickets.*.id'    => 'required|integer',
+            'tickets.*.name'  => 'required|string|max:255',
+            'tickets.*.price' => 'required|numeric|min:0',
+            'tickets.*.quota' => 'required|integer|min:1',
         ]);
 
-        return redirect()->route('organizer.events.index')->with('success', 'Event updated successfully.');
+        $updateData = [
+            'title'         => $validated['title'],
+            'category_id'   => $validated['category_id'],
+            'description'   => $validated['description'],
+            'start_time'    => $validated['start_time'],
+            'end_time'      => $validated['end_time'],
+            'location_name' => $validated['location_name'],
+            'address'       => $validated['address'] ?? $event->address,
+            'status'        => 'draft',
+        ];
+
+        if ($request->hasFile('banner')) {
+            $updateData['banner_path'] = $request->file('banner')->store('events/banners', 'public');
+        }
+
+        $event->update($updateData);
+
+        if (!empty($validated['tickets'])) {
+            foreach ($validated['tickets'] as $ticketData) {
+                $ticket = $event->tickets->firstWhere('id', $ticketData['id']);
+                if ($ticket) {
+                    $soldQty = $ticket->quota - $ticket->available_qty;
+                    $newQuota = max((int) $ticketData['quota'], $soldQty);
+                    $ticket->update([
+                        'name'          => $ticketData['name'],
+                        'price'         => $ticketData['price'],
+                        'quota'         => $newQuota,
+                        'available_qty' => $newQuota - $soldQty,
+                    ]);
+                }
+            }
+        }
+
+        return redirect()->route('organizer.events.index')->with('success', 'Event berhasil diperbarui.');
     }
 
     public function destroy(string $id)

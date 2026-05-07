@@ -9,6 +9,10 @@ class OrganizerWithdrawal extends Model
     protected $fillable = [
         'organizer_id',
         'amount',
+        'bank_name',
+        'account_number',
+        'account_holder_name',
+        'status',
     ];
 
     protected $casts = [

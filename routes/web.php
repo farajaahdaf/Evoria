@@ -10,22 +10,44 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function (Illuminate\Http\Request $request) {
     $search = trim((string) $request->query('q', ''));
 
-    $eventsQuery = \App\Models\Event::with(['category', 'tickets'])
-        ->where('status', 'published');
-
     if ($search !== '') {
-        $eventsQuery->where(function ($query) use ($search) {
-            $query->where('title', 'like', "%{$search}%")
-                ->orWhere('description', 'like', "%{$search}%")
-                ->orWhere('location_name', 'like', "%{$search}%")
-                ->orWhere('address', 'like', "%{$search}%")
-                ->orWhereHas('category', function ($categoryQuery) use ($search) {
-                    $categoryQuery->where('name', 'like', "%{$search}%");
-                });
-        });
+        $events = \App\Models\Event::with(['category', 'tickets'])
+            ->where('status', 'published')
+            ->where(function ($query) use ($search) {
+                $query->where('title', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%")
+                    ->orWhere('location_name', 'like', "%{$search}%")
+                    ->orWhere('address', 'like', "%{$search}%")
+                    ->orWhereHas('category', function ($categoryQuery) use ($search) {
+                        $categoryQuery->where('name', 'like', "%{$search}%");
+                    });
+            })
+            ->latest()
+            ->take(12)
+            ->get();
+    } else {
+        // Sort featured events by most tickets sold (paid orders only)
+        $events = \App\Models\Event::with(['category', 'tickets'])
+            ->where('status', 'published')
+            ->leftJoinSub(
+                \DB::table('order_items')
+                    ->join('orders', 'orders.id', '=', 'order_items.order_id')
+                    ->where('orders.status', 'paid')
+                    ->join('tickets', 'tickets.id', '=', 'order_items.ticket_id')
+                    ->select('tickets.event_id', \DB::raw('SUM(order_items.quantity) as total_sold'))
+                    ->groupBy('tickets.event_id'),
+                'sold_stats',
+                'events.id',
+                '=',
+                'sold_stats.event_id'
+            )
+            ->select('events.*', \DB::raw('COALESCE(sold_stats.total_sold, 0) as total_sold'))
+            ->orderByDesc('total_sold')
+            ->orderByDesc('events.created_at')
+            ->take(6)
+            ->get();
     }
 
-    $events = $eventsQuery->latest()->take($search !== '' ? 12 : 6)->get();
     $categories = \App\Models\EventCategory::all();
     return view('welcome', compact('events', 'categories', 'search'));
 })->name('home');
@@ -236,6 +258,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/events/{event:slug}/draft', [AdminController::class, 'saveEventAsDraft'])->name('events.draft');
         Route::post('/events/{event:slug}/approve', [AdminController::class, 'approveEvent'])->name('events.approve');
         Route::post('/events/{event:slug}/reject', [AdminController::class, 'rejectEvent'])->name('events.reject');
+        Route::delete('/events/{event:slug}', [AdminController::class, 'deleteEvent'])->name('events.delete');
     });
 
     Route::middleware('role:organizer')->prefix('organizer')->name('organizer.')->group(function () {

@@ -187,4 +187,14 @@ class AdminController extends Controller
             ->route('admin.dashboard')
             ->with('success', 'Event application has been rejected.');
     }
+
+    public function deleteEvent(Event $event)
+    {
+        $title = $event->title;
+        $event->delete();
+
+        return redirect()
+            ->route('admin.events.all')
+            ->with('success', "Event \"{$title}\" berhasil dihapus.");
+    }
 }

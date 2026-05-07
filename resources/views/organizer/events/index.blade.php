@@ -70,21 +70,36 @@
                             </div>
                         </div>
 
-                        <div class="mt-auto flex space-x-2 pt-4 border-t border-gray-100">
-                            <a href="{{ route('organizer.events.show', $event->id) }}" class="flex-1 text-center py-2 bg-gray-50 text-gray-700 font-medium rounded hover:bg-gray-100 transition">View</a>
-                            
+                        <div class="mt-auto flex flex-wrap gap-2 pt-4 border-t border-gray-100">
+                            <a href="{{ route('organizer.events.show', $event->id) }}" class="flex-1 text-center py-2 bg-gray-50 text-gray-700 font-medium rounded hover:bg-gray-100 transition text-sm">View</a>
+
                             <a href="{{ route('organizer.events.checkin', $event->id) }}"
-                               class="flex-1 inline-flex items-center justify-center px-3 py-1.5 rounded bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition">
+                               class="flex-1 inline-flex items-center justify-center px-3 py-2 rounded bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition">
                                 Scan Check-in
                             </a>
 
-                            @if($event->status === 'draft')
-                            <form action="{{ route('organizer.events.update', $event->id) }}" method="POST" class="flex-1">
-                                @csrf @method('PUT')
-                                <input type="hidden" name="action" value="submit">
-                                <button type="submit" class="w-full text-center py-2 bg-blue-50 text-primary font-medium rounded hover:bg-blue-100 transition">Submit Review</button>
-                            </form>
+                            @if($event->status !== 'published')
+                                <a href="{{ route('organizer.events.edit', $event->id) }}"
+                                   class="flex-1 text-center py-2 bg-amber-50 text-amber-700 font-medium rounded hover:bg-amber-100 transition text-sm">
+                                    Edit
+                                </a>
                             @endif
+
+                            @if($event->status === 'draft' || $event->status === 'rejected')
+                                <form action="{{ route('organizer.events.update', $event->id) }}" method="POST" class="flex-1">
+                                    @csrf @method('PUT')
+                                    <input type="hidden" name="action" value="submit">
+                                    <button type="submit" class="w-full text-center py-2 bg-blue-50 text-primary font-medium rounded hover:bg-blue-100 transition text-sm">Submit Review</button>
+                                </form>
+                            @endif
+
+                            <form action="{{ route('organizer.events.destroy', $event->id) }}" method="POST"
+                                  onsubmit="return confirm('Hapus event \'{{ addslashes($event->title) }}\'? Tindakan ini tidak dapat dibatalkan.')">
+                                @csrf @method('DELETE')
+                                <button type="submit" class="px-3 py-2 bg-red-50 text-red-600 font-medium rounded hover:bg-red-100 transition text-sm">
+                                    Hapus
+                                </button>
+                            </form>
                         </div>
                     </div>
                 </div>
