@@ -13,16 +13,23 @@ RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
 
 WORKDIR /var/www
 
-COPY . .
+COPY composer.json composer.lock ./
 
-RUN composer install --no-dev --optimize-autoloader --no-scripts --no-interaction
+ENV COMPOSER_MEMORY_LIMIT=-1
+
+RUN composer install --no-dev --optimize-autoloader --no-scripts --no-interaction --ignore-platform-reqs
+
+COPY . .
 
 RUN npm ci && npm run build && rm -rf node_modules
 
 RUN mkdir -p storage/framework/{sessions,views,cache,testing} storage/logs bootstrap/cache \
     && chmod -R 775 storage bootstrap/cache
 
-RUN php artisan config:cache && php artisan route:cache && php artisan view:cache
+RUN php artisan package:discover --ansi \
+    && php artisan config:cache \
+    && php artisan route:cache \
+    && php artisan view:cache
 
 EXPOSE 8080
 
