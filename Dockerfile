@@ -68,15 +68,13 @@ RUN mkdir -p \
     bootstrap/cache \
     && chmod -R 777 storage bootstrap/cache
 
-# Clear and cache Laravel config
-RUN php artisan config:clear || true \
-    && php artisan cache:clear || true \
-    && php artisan route:clear || true \
+# Cache routes and views at build time (no env vars needed)
+RUN php artisan route:clear || true \
     && php artisan view:clear || true \
-    && php artisan config:cache || true \
     && php artisan route:cache || true \
     && php artisan view:cache || true
 
 EXPOSE 8080
 
-CMD ["sh", "-c", "chmod -R 777 storage bootstrap/cache && php artisan migrate --force || true && php artisan storage:link || true && php -S 0.0.0.0:8080 -t public"]
+# config:cache runs at runtime so it picks up actual env vars (DB_HOST, etc.)
+CMD ["sh", "-c", "chmod -R 777 storage bootstrap/cache && php artisan config:cache && php artisan migrate --force && php artisan storage:link || true && php -S 0.0.0.0:8080 -t public"]
