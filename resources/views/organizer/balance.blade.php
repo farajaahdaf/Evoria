@@ -55,46 +55,119 @@
                 </div>
 
                 <!-- Withdraw Section -->
-                <div class="bg-white rounded-2xl p-6 shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] border border-slate-100 flex flex-col">
-                    <div class="flex items-center justify-between mb-6">
+                <div class="bg-white rounded-2xl p-6 shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] border border-slate-100 flex flex-col"
+                     x-data="{
+                        bankOpen: false,
+                        bankSearch: '',
+                        selectedBank: '{{ old('bank_name') }}',
+                        banks: [
+                            'Bank Central Asia (BCA)','Bank Negara Indonesia (BNI)','Bank Rakyat Indonesia (BRI)',
+                            'Bank Mandiri','Bank CIMB Niaga','Bank Permata','Bank Danamon',
+                            'Bank Tabungan Negara (BTN)','Maybank Indonesia','Bank OCBC NISP',
+                            'Bank Jago','Bank Mega','Bank Muamalat','Bank Syariah Indonesia (BSI)',
+                            'Bank Bukopin','Panin Bank','Bank Commonwealth','Bank DBS Indonesia',
+                            'Bank Neo Commerce (BNC)','Allo Bank','Bank Jenius (BTPN)','Seabank Indonesia',
+                            'Bank Sinarmas','Bank Capital Indonesia','Bank Victoria International',
+                            'Bank Woori Saudara','Bank Tabungan Pensiunan Nasional (BTPN)',
+                            'Bank KEB Hana Indonesia','Bank QNB Indonesia','Bank IBK Indonesia',
+                            'Bank BJB','Bank Jatim','Bank DKI','Bank Jateng','Bank DIY',
+                            'Bank Sumut','Bank Sumsel Babel','Bank Aceh Syariah',
+                            'Bank Riau Kepri','Bank Nagari (Sumbar)','Bank Sulselbar',
+                            'Bank NTT','Bank NTB Syariah','Bank Papua','Bank Kaltimtara','Bank Kalsel'
+                        ],
+                        get filtered() {
+                            if (!this.bankSearch) return this.banks;
+                            return this.banks.filter(b => b.toLowerCase().includes(this.bankSearch.toLowerCase()));
+                        },
+                        selectBank(bank) { this.selectedBank = bank; this.bankOpen = false; this.bankSearch = ''; }
+                     }">
+                    <div class="flex items-center justify-between mb-5">
                         <h3 class="text-xl font-bold text-slate-900">Withdraw</h3>
-                        <span class="text-[11px] font-semibold text-slate-600 bg-slate-50 px-3 py-1 rounded-full border border-slate-200">Saldo tersedia: Rp {{ number_format($availableBalance ?? 0, 0, ',', '.') }}</span>
+                        <span class="text-[11px] font-semibold text-slate-600 bg-slate-50 px-3 py-1 rounded-full border border-slate-200">Saldo: Rp {{ number_format($availableBalance ?? 0, 0, ',', '.') }}</span>
                     </div>
 
-                    <form id="withdraw-form" action="{{ route('organizer.withdraw') }}" method="POST" class="flex-1 flex flex-col">
+                    <form id="withdraw-form" action="{{ route('organizer.withdraw') }}" method="POST" class="flex-1 flex flex-col gap-4">
                         @csrf
-                        <div class="flex items-end gap-4 mb-4">
-                            <!-- Custom Wallet Icon -->
-                            <div class="w-12 h-12 bg-[#E0E7FF] text-[#1E3A8A] rounded-lg border-[2px] border-[#1E3A8A] hidden sm:flex items-center justify-center relative flex-shrink-0 mb-[1px]">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
-                                <div class="absolute -bottom-1 -right-1 w-5 h-5 bg-[#3B82F6] rounded-full border-2 border-white flex items-center justify-center text-white">
-                                    <svg class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
-                                </div>
-                            </div>
-                            
-                            <div class="flex-1">
-                                <label for="amount" class="block text-xs text-slate-600 mb-1 ml-1">Nominal Withdraw (Rp)</label>
-                                <input
-                                    id="amount"
-                                    name="amount"
-                                    type="number"
-                                    min="1"
-                                    step="1"
-                                    value="{{ old('amount') }}"
-                                    class="w-full rounded-xl border-slate-200 shadow-sm focus:border-[#4F46E5] focus:ring-[#4F46E5] text-sm py-2.5 px-4"
-                                    placeholder="Contoh: 50000"
-                                    required
-                                >
-                            </div>
+
+                        <!-- Nominal -->
+                        <div class="space-y-1">
+                            <label for="amount" class="block text-xs font-semibold text-slate-600 uppercase tracking-widest">Nominal Withdraw (Rp)</label>
+                            <input id="amount" name="amount" type="number" min="10000" step="1000"
+                                   value="{{ old('amount') }}"
+                                   class="w-full rounded-xl border-slate-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm py-2.5 px-4"
+                                   placeholder="Contoh: 50000" required>
+                            @error('amount')
+                                <p class="text-xs font-medium text-red-600">{{ $message }}</p>
+                            @enderror
                         </div>
-                        @error('amount')
-                            <p class="mb-4 text-xs font-medium text-red-600">{{ $message }}</p>
-                        @enderror
+
+                        <!-- Bank Name — Searchable Dropdown -->
+                        <div class="space-y-1 relative">
+                            <label class="block text-xs font-semibold text-slate-600 uppercase tracking-widest">Nama Bank</label>
+                            <input type="hidden" name="bank_name" :value="selectedBank" required>
+
+                            <button type="button" @click="bankOpen = !bankOpen"
+                                    class="w-full flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm shadow-sm focus:outline-none focus:border-indigo-500 text-left"
+                                    :class="selectedBank ? 'text-slate-900' : 'text-slate-400'">
+                                <span x-text="selectedBank || 'Pilih bank...'"></span>
+                                <svg class="w-4 h-4 text-slate-400 transition-transform" :class="bankOpen ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </button>
+
+                            <div x-cloak x-show="bankOpen" @click.away="bankOpen = false"
+                                 x-transition:enter="transition ease-out duration-150"
+                                 x-transition:enter-start="opacity-0 -translate-y-1"
+                                 x-transition:enter-end="opacity-100 translate-y-0"
+                                 class="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden">
+                                <div class="p-2 border-b border-slate-100">
+                                    <input type="text" x-model="bankSearch" placeholder="Cari bank..."
+                                           class="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
+                                </div>
+                                <ul class="max-h-52 overflow-y-auto py-1">
+                                    <template x-for="bank in filtered" :key="bank">
+                                        <li @click="selectBank(bank)"
+                                            class="px-4 py-2.5 text-sm cursor-pointer hover:bg-indigo-50 hover:text-indigo-700 font-medium transition-colors"
+                                            :class="selectedBank === bank ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-slate-700'"
+                                            x-text="bank"></li>
+                                    </template>
+                                    <li x-show="filtered.length === 0" class="px-4 py-4 text-sm text-slate-400 text-center">Bank tidak ditemukan.</li>
+                                </ul>
+                            </div>
+                            @error('bank_name')
+                                <p class="text-xs font-medium text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <!-- Account Number -->
+                        <div class="space-y-1">
+                            <label for="account_number" class="block text-xs font-semibold text-slate-600 uppercase tracking-widest">Nomor Rekening</label>
+                            <input id="account_number" name="account_number" type="text" inputmode="numeric"
+                                   value="{{ old('account_number') }}"
+                                   class="w-full rounded-xl border-slate-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm py-2.5 px-4"
+                                   placeholder="Contoh: 1234567890" required>
+                            @error('account_number')
+                                <p class="text-xs font-medium text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <!-- Account Holder Name -->
+                        <div class="space-y-1">
+                            <label for="account_holder_name" class="block text-xs font-semibold text-slate-600 uppercase tracking-widest">Nama Pemilik Rekening</label>
+                            <input id="account_holder_name" name="account_holder_name" type="text"
+                                   value="{{ old('account_holder_name') }}"
+                                   class="w-full rounded-xl border-slate-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm py-2.5 px-4"
+                                   placeholder="Sesuai nama di buku tabungan" required>
+                            @error('account_holder_name')
+                                <p class="text-xs font-medium text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
 
                         <div class="mt-auto pt-2">
+                            <p class="text-[11px] text-slate-400 mb-3 text-center">Simulasi penarikan dana — tidak terhubung ke gateway pembayaran.</p>
                             <button type="submit" class="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#5B4CFA] to-[#4A3EE0] px-4 py-3 text-sm font-bold text-white hover:opacity-90 transition shadow-md shadow-indigo-200">
                                 Withdraw Sekarang
-                                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
                             </button>
                         </div>
                     </form>
@@ -177,36 +250,35 @@
                     
                     <div class="relative pl-4 space-y-8 border-l-[2px] border-slate-100 ml-2">
                         
-                        @php $hasWithdrawals = false; @endphp
                         @forelse($recentWithdrawals ?? [] as $withdrawal)
-                            @php $hasWithdrawals = true; @endphp
                             <div class="relative pl-6">
-                                <!-- Dot -->
                                 <span class="absolute -left-[27px] top-1 w-3 h-3 bg-[#5B4CFA] rounded-full border-[3px] border-white ring-[3px] ring-indigo-50 shadow-sm"></span>
-                                
-                                <div class="flex justify-between items-start">
-                                    <div>
+                                <div class="flex justify-between items-start gap-3">
+                                    <div class="flex-1 min-w-0">
                                         <p class="text-sm font-bold text-slate-900 mb-1">Withdraw Berhasil</p>
-                                        <h4 class="text-2xl font-black text-slate-900 tracking-tight leading-none mb-1.5">Rp {{ number_format($withdrawal->amount, 0, ',', '.') }}</h4>
-                                        <p class="text-xs font-semibold text-slate-500 mb-0.5">BCA - 12345678</p>
-                                        <p class="text-[11px] font-medium text-slate-400">{{ $withdrawal->created_at->format('d M Y H:i') }}</p>
+                                        <h4 class="text-2xl font-black text-slate-900 tracking-tight leading-none mb-1.5">
+                                            Rp {{ number_format($withdrawal->amount, 0, ',', '.') }}
+                                        </h4>
+                                        @if($withdrawal->bank_name)
+                                            <p class="text-xs font-semibold text-slate-600 mb-0.5 truncate">
+                                                {{ $withdrawal->bank_name }} — {{ $withdrawal->account_number }}
+                                            </p>
+                                            <p class="text-[11px] text-slate-400 font-medium truncate">{{ $withdrawal->account_holder_name }}</p>
+                                        @endif
+                                        <p class="text-[11px] font-medium text-slate-400 mt-0.5">{{ $withdrawal->created_at->format('d M Y H:i') }}</p>
                                     </div>
-                                    <div class="w-10 h-10 rounded-full bg-[#FAFAFA] border border-slate-200 flex items-center justify-center text-[#1E3A8A] flex-shrink-0 shadow-sm">
-                                        <svg class="w-4 h-4 text-slate-600" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z"></path><path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clip-rule="evenodd"></path></svg>
+                                    <div class="w-10 h-10 rounded-full bg-[#FAFAFA] border border-slate-200 flex items-center justify-center flex-shrink-0 shadow-sm">
+                                        <svg class="w-4 h-4 text-slate-600" fill="currentColor" viewBox="0 0 20 20"><path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z"></path><path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clip-rule="evenodd"></path></svg>
                                     </div>
                                 </div>
                             </div>
                         @empty
-                        @endforelse
-
-                        <!-- Empty State always showing at bottom as per design -->
-                        <div class="relative pl-6 {{ !$hasWithdrawals ? '' : 'pt-2' }}">
-                            <span class="absolute -left-[27px] top-1.5 w-3 h-3 bg-slate-300 rounded-full border-[3px] border-white"></span>
-                            <div>
-                                <p class="text-sm font-bold text-slate-500 mb-0.5">Empty State</p>
+                            <div class="relative pl-6">
+                                <span class="absolute -left-[27px] top-1.5 w-3 h-3 bg-slate-300 rounded-full border-[3px] border-white"></span>
+                                <p class="text-sm font-bold text-slate-500 mb-0.5">Belum ada riwayat</p>
                                 <p class="text-xs text-slate-400 font-medium">Penarikan sebelumnya akan muncul di sini.</p>
                             </div>
-                        </div>
+                        @endforelse
 
                     </div>
                 </div>

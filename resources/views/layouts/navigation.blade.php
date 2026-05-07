@@ -1,154 +1,90 @@
-<nav x-data="{ open: false }" class="bg-white border-b border-gray-100">
-    <!-- Primary Navigation Menu -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between h-16">
-            <div class="flex">
-                <!-- Logo -->
-                <div class="shrink-0 flex items-center">
-                    <a href="{{ route('dashboard') }}">
-                        <x-application-logo class="block h-9 w-auto fill-current text-gray-800" />
-                    </a>
-                </div>
+@php
+    $user = auth()->user();
+    $avatarUrl = $user && $user->profile_photo_path
+        ? \Illuminate\Support\Facades\Storage::url($user->profile_photo_path)
+        : "https://ui-avatars.com/api/?name=" . urlencode($user->name ?? 'User') . "&background=0f172a&color=ffffff&size=128";
+    $role = $user->role ?? 'user';
+    $roleLabel = match($role) {
+        'admin' => 'Admin',
+        'organizer' => 'Organizer',
+        default => 'User',
+    };
+@endphp
 
-                <!-- Navigation Links -->
-                <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    @if(Auth::user()->role === 'organizer')
-                        <x-nav-link :href="route('organizer.balance')" :active="request()->routeIs('organizer.balance')">
-                            {{ __('Saldo') }}
-                        </x-nav-link>
-                    @elseif(Auth::user()->role !== 'admin')
-                        <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                            {{ __('Dashboard') }}
-                        </x-nav-link>
-                    @endif
+<header class="bg-white border-b border-gray-200" x-data="{ menuOpen: false }">
+    <div class="max-w-[1400px] mx-auto px-6 h-[80px] flex items-center justify-between gap-6">
+        <div class="flex items-center gap-8">
+            <a href="{{ route('home') }}" class="flex items-center gap-1 shrink-0">
+                <x-application-logo class="h-10 w-auto" />
+            </a>
 
-                    @if(Auth::user()->role === 'admin')
-                        <x-nav-link :href="route('admin.users')" :active="request()->routeIs('admin.users')">
-                            {{ __('Attendee Terdaftar') }}
-                        </x-nav-link>
-                        <x-nav-link :href="route('admin.organizers.all')" :active="request()->routeIs('admin.organizers.all')">
-                            {{ __('Organizer Terdaftar') }}
-                        </x-nav-link>
-                        <x-nav-link :href="route('admin.events.all')" :active="request()->routeIs('admin.events.all')">
-                            {{ __('Total Event') }}
-                        </x-nav-link>
-                        <x-nav-link :href="route('admin.transactions')" :active="request()->routeIs('admin.transactions')">
-                            {{ __('Riwayat Transaksi') }}
-                        </x-nav-link>
-                    @endif
-                </div>
-            </div>
-
-            <!-- Settings Dropdown -->
-            <div class="hidden sm:flex sm:items-center sm:ms-6">
-                <x-dropdown align="right" width="48">
-                    <x-slot name="trigger">
-                        <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
-                            <div>{{ Auth::user()->name }}</div>
-
-                            <div class="ms-1">
-                                <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                                </svg>
-                            </div>
-                        </button>
-                    </x-slot>
-
-                    <x-slot name="content">
-                        @if (Auth::user()->role === 'attendee')
-                            <x-dropdown-link :href="route('organizer.application.create')">
-                                {{ __('Apply as Organizer') }}
-                            </x-dropdown-link>
-                        @endif
-
-                        <x-dropdown-link :href="route('profile.edit')">
-                            {{ __('Profile') }}
-                        </x-dropdown-link>
-
-                        <!-- Authentication -->
-                        <form method="POST" action="{{ route('logout') }}">
-                            @csrf
-
-                            <x-dropdown-link :href="route('logout')"
-                                    onclick="event.preventDefault();
-                                                this.closest('form').submit();">
-                                {{ __('Log Out') }}
-                            </x-dropdown-link>
-                        </form>
-                    </x-slot>
-                </x-dropdown>
-            </div>
-
-            <!-- Hamburger -->
-            <div class="-me-2 flex items-center sm:hidden">
-                <button @click="open = ! open" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 focus:text-gray-500 transition duration-150 ease-in-out">
-                    <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
-                        <path :class="{'hidden': open, 'inline-flex': ! open }" class="inline-flex" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-                        <path :class="{'hidden': ! open, 'inline-flex': open }" class="hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Responsive Navigation Menu -->
-    <div x-cloak :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden">
-        <div class="pt-2 pb-3 space-y-1">
-            @if(Auth::user()->role === 'organizer')
-                <x-responsive-nav-link :href="route('organizer.balance')" :active="request()->routeIs('organizer.balance')">
-                    {{ __('Saldo') }}
-                </x-responsive-nav-link>
-            @elseif(Auth::user()->role !== 'admin')
-                <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                    {{ __('Dashboard') }}
-                </x-responsive-nav-link>
-            @endif
-
-            @if(Auth::user()->role === 'admin')
-                <x-responsive-nav-link :href="route('admin.users')" :active="request()->routeIs('admin.users')">
-                    {{ __('Attendee Terdaftar') }}
-                </x-responsive-nav-link>
-                <x-responsive-nav-link :href="route('admin.organizers.all')" :active="request()->routeIs('admin.organizers.all')">
-                    {{ __('Organizer Terdaftar') }}
-                </x-responsive-nav-link>
-                <x-responsive-nav-link :href="route('admin.events.all')" :active="request()->routeIs('admin.events.all')">
-                    {{ __('Total Event') }}
-                </x-responsive-nav-link>
-                <x-responsive-nav-link :href="route('admin.transactions')" :active="request()->routeIs('admin.transactions')">
-                    {{ __('Riwayat Transaksi') }}
-                </x-responsive-nav-link>
-            @endif
-        </div>
-
-        <!-- Responsive Settings Options -->
-        <div class="pt-4 pb-1 border-t border-gray-200">
-            <div class="px-4">
-                <div class="font-medium text-base text-gray-800">{{ Auth::user()->name }}</div>
-                <div class="font-medium text-sm text-gray-500">{{ Auth::user()->email }}</div>
-            </div>
-
-            <div class="mt-3 space-y-1">
-                @if (Auth::user()->role === 'attendee')
-                    <x-responsive-nav-link :href="route('organizer.application.create')">
-                        {{ __('Apply as Organizer') }}
-                    </x-responsive-nav-link>
+            <nav class="hidden lg:flex items-center gap-6">
+                @if($role === 'admin')
+                    <a class="text-[14px] font-bold hover:text-primary transition-colors {{ request()->routeIs('admin.users') ? 'text-primary' : 'text-slate-900' }}" href="{{ route('admin.users') }}">Attendee</a>
+                    <a class="text-[14px] font-bold hover:text-primary transition-colors {{ request()->routeIs('admin.organizers.all') ? 'text-primary' : 'text-slate-900' }}" href="{{ route('admin.organizers.all') }}">Organizer</a>
+                    <a class="text-[14px] font-bold hover:text-primary transition-colors {{ request()->routeIs('admin.events.all') || request()->routeIs('admin.events.show') ? 'text-primary' : 'text-slate-900' }}" href="{{ route('admin.events.all') }}">Events</a>
+                    <a class="text-[14px] font-bold hover:text-primary transition-colors {{ request()->routeIs('admin.transactions') ? 'text-primary' : 'text-slate-900' }}" href="{{ route('admin.transactions') }}">Transaksi</a>
+                @elseif($role === 'organizer')
+                    <a class="text-[14px] font-bold hover:text-primary transition-colors {{ request()->routeIs('organizer.balance') ? 'text-primary' : 'text-slate-900' }}" href="{{ route('organizer.balance') }}">Saldo</a>
+                    <a class="text-[14px] font-bold hover:text-primary transition-colors {{ request()->routeIs('organizer.events.index') ? 'text-primary' : 'text-slate-900' }}" href="{{ route('organizer.events.index') }}">Event Saya</a>
+                    <a class="text-[14px] font-bold hover:text-primary transition-colors {{ request()->routeIs('organizer.events.create') ? 'text-primary' : 'text-slate-900' }}" href="{{ route('organizer.events.create') }}">Buat Event</a>
                 @endif
+            </nav>
+        </div>
 
-                <x-responsive-nav-link :href="route('profile.edit')">
-                    {{ __('Profile') }}
-                </x-responsive-nav-link>
+        <div class="flex-1 max-w-[500px] hidden md:block">
+            <x-event-search :initial-value="request('q', '')" />
+        </div>
 
-                <!-- Authentication -->
+        <div class="relative flex items-center gap-3">
+            <img src="{{ $avatarUrl }}" alt="Avatar {{ $user->name }}" class="w-11 h-11 rounded-full object-cover border-2 border-white shadow-sm">
+            <div class="hidden sm:block">
+                <p class="text-[12px] text-slate-500 leading-none">{{ $roleLabel }}</p>
+                <p class="text-[14px] font-bold text-slate-900 leading-tight">{{ $user->name }}</p>
+            </div>
+            <button
+                type="button"
+                @click="menuOpen = !menuOpen"
+                class="h-9 w-9 rounded-lg border border-slate-200 bg-white flex items-center justify-center text-slate-600 hover:text-primary hover:border-primary transition-colors"
+                aria-label="Buka menu"
+            >
+                <span
+                    class="material-symbols-outlined text-[20px] transition-transform duration-200"
+                    :class="menuOpen ? 'rotate-180' : 'rotate-0'"
+                >expand_more</span>
+            </button>
+
+            <div
+                x-cloak
+                x-show="menuOpen"
+                @click.away="menuOpen = false"
+                x-transition:enter="transition ease-out duration-200"
+                x-transition:enter-start="opacity-0 -translate-y-2 scale-95"
+                x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+                x-transition:leave="transition ease-in duration-150"
+                x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+                x-transition:leave-end="opacity-0 -translate-y-1 scale-95"
+                class="absolute right-0 top-14 w-56 bg-white border border-slate-200 rounded-xl shadow-lg py-2 z-50"
+            >
+                @if($role === 'admin')
+                    <a href="{{ route('admin.dashboard') }}" class="block px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:text-primary transition-colors">Dashboard</a>
+                    <a href="{{ route('admin.users') }}" class="block px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:text-primary transition-colors">Attendee Terdaftar</a>
+                    <a href="{{ route('admin.organizers.all') }}" class="block px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:text-primary transition-colors">Organizer Terdaftar</a>
+                    <a href="{{ route('admin.events.all') }}" class="block px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:text-primary transition-colors">Total Event</a>
+                    <a href="{{ route('admin.transactions') }}" class="block px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:text-primary transition-colors">Riwayat Transaksi</a>
+                    <div class="my-1 border-t border-slate-100"></div>
+                @elseif($role === 'organizer')
+                    <a href="{{ route('organizer.balance') }}" class="block px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:text-primary transition-colors">Saldo</a>
+                    <a href="{{ route('organizer.events.index') }}" class="block px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:text-primary transition-colors">Event Saya</a>
+                    <a href="{{ route('organizer.events.create') }}" class="block px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:text-primary transition-colors">Buat Event</a>
+                    <div class="my-1 border-t border-slate-100"></div>
+                @endif
+                <a href="{{ route('profile.edit') }}" class="block px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:text-primary transition-colors">Profile</a>
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
-
-                    <x-responsive-nav-link :href="route('logout')"
-                            onclick="event.preventDefault();
-                                        this.closest('form').submit();">
-                        {{ __('Log Out') }}
-                    </x-responsive-nav-link>
+                    <button type="submit" class="w-full text-left px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 transition-colors">Logout</button>
                 </form>
             </div>
         </div>
     </div>
-</nav>
+</header>

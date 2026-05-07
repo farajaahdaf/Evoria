@@ -496,6 +496,10 @@
                         });
                         const data = await res.json();
 
+                        // TEMP CHATBOT DEBUG: hapus blok ini setelah selesai inspect response JSON di browser console.
+                        console.log('[Chatbot Debug] HTTP status:', res.status);
+                        console.log('[Chatbot Debug] Response JSON:', data);
+
                         this.messages.push({ role: 'assistant', content: data.response });
                     } catch(e) {
                         this.messages.push({ role: 'assistant', content: "Momen sibuk, koneksi AI terputus. Coba lagi." });

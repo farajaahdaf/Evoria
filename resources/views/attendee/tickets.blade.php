@@ -33,39 +33,55 @@
         @endphp
 
         <!-- 1. Hero Section -->
-        <section class="bg-gradient-to-r from-violet-600 to-blue-600 rounded-2xl p-8 md:p-10 shadow-lg text-white">
-            <h1 class="text-3xl md:text-4xl font-black mb-2">Hi, {{ auth()->user()->name }}! 👋</h1>
-            <p class="text-blue-100 text-lg">Manage your tickets and upcoming events</p>
+        <section class="relative bg-gray-900 rounded-3xl overflow-hidden shadow-2xl">
+            <div class="absolute inset-0 bg-gradient-to-r from-blue-900/60 to-transparent"></div>
+            <div class="relative p-10 flex items-center justify-between">
+                <div class="max-w-lg space-y-4">
+                    <p class="text-xs font-black text-blue-200 uppercase tracking-[0.25em]">My Tickets</p>
+                    <h3 class="text-4xl font-extrabold text-white tracking-tight">Hi, {{ auth()->user()->name }}!</h3>
+                    <p class="text-gray-300 text-lg leading-relaxed">
+                        Anda memiliki {{ $paidOrders }} pesanan berbayar dan {{ $upcomingEvents }} event yang akan datang.
+                    </p>
+                    <div class="pt-2">
+                        <a href="{{ route('home') }}" class="inline-flex items-center px-6 py-3 bg-white text-gray-900 font-bold rounded-xl hover:bg-gray-100 transition-all shadow-lg text-sm">
+                            Cari Event Baru
+                        </a>
+                    </div>
+                </div>
+                <div class="hidden md:flex pr-6 opacity-80">
+                    <span class="material-symbols-outlined text-white" style="font-size:120px;">confirmation_number</span>
+                </div>
+            </div>
         </section>
 
         <!-- 2. Summary Cards -->
         <section class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm flex items-center gap-4">
-                <div class="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-600">
-                    <span class="material-symbols-outlined">receipt_long</span>
+            <div class="block bg-white rounded-3xl p-6 shadow-sm border border-gray-100 relative overflow-hidden group transition hover:-translate-y-1 hover:shadow-md">
+                <div class="flex justify-between items-start mb-4">
+                    <div class="p-3 bg-gray-50 rounded-2xl text-gray-900 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300">
+                        <span class="material-symbols-outlined" style="font-size:24px;">receipt_long</span>
+                    </div>
                 </div>
-                <div>
-                    <p class="text-sm text-slate-500 font-medium">Total Orders</p>
-                    <p class="text-2xl font-black text-slate-900">{{ $totalOrders }}</p>
-                </div>
+                <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Total Orders</p>
+                <h4 class="text-3xl font-black text-gray-900">{{ $totalOrders }}</h4>
             </div>
-            <div class="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm flex items-center gap-4">
-                <div class="w-12 h-12 rounded-full bg-green-50 flex items-center justify-center text-green-600">
-                    <span class="material-symbols-outlined">check_circle</span>
+            <div class="block bg-white rounded-3xl p-6 shadow-sm border border-gray-100 relative overflow-hidden group transition hover:-translate-y-1 hover:shadow-md">
+                <div class="flex justify-between items-start mb-4">
+                    <div class="p-3 bg-green-50 rounded-2xl text-green-700 group-hover:bg-green-600 group-hover:text-white transition-all duration-300">
+                        <span class="material-symbols-outlined" style="font-size:24px;">check_circle</span>
+                    </div>
                 </div>
-                <div>
-                    <p class="text-sm text-slate-500 font-medium">Paid Orders</p>
-                    <p class="text-2xl font-black text-slate-900">{{ $paidOrders }}</p>
-                </div>
+                <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Paid Orders</p>
+                <h4 class="text-3xl font-black text-gray-900">{{ $paidOrders }}</h4>
             </div>
-            <div class="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm flex items-center gap-4">
-                <div class="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
-                    <span class="material-symbols-outlined">event</span>
+            <div class="block bg-white rounded-3xl p-6 shadow-sm border border-gray-100 relative overflow-hidden group transition hover:-translate-y-1 hover:shadow-md">
+                <div class="flex justify-between items-start mb-4">
+                    <div class="p-3 bg-blue-50 rounded-2xl text-blue-700 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300">
+                        <span class="material-symbols-outlined" style="font-size:24px;">event</span>
+                    </div>
                 </div>
-                <div>
-                    <p class="text-sm text-slate-500 font-medium">Upcoming Events</p>
-                    <p class="text-2xl font-black text-slate-900">{{ $upcomingEvents }}</p>
-                </div>
+                <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Upcoming Events</p>
+                <h4 class="text-3xl font-black text-gray-900">{{ $upcomingEvents }}</h4>
             </div>
         </section>
 

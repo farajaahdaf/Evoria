@@ -78,11 +78,18 @@ class OrganizerController extends Controller
     public function withdraw(Request $request)
     {
         $validated = $request->validate([
-            'amount' => ['required', 'numeric', 'min:1'],
+            'amount'              => ['required', 'numeric', 'min:10000'],
+            'bank_name'           => ['required', 'string', 'max:100'],
+            'account_number'      => ['required', 'string', 'max:30', 'regex:/^\d+$/'],
+            'account_holder_name' => ['required', 'string', 'max:100'],
         ], [
-            'amount.required' => 'Nominal withdraw wajib diisi.',
-            'amount.numeric' => 'Nominal withdraw harus berupa angka.',
-            'amount.min' => 'Nominal withdraw minimal Rp 1.',
+            'amount.required'              => 'Nominal withdraw wajib diisi.',
+            'amount.numeric'               => 'Nominal withdraw harus berupa angka.',
+            'amount.min'                   => 'Nominal withdraw minimal Rp 10.000.',
+            'bank_name.required'           => 'Nama bank wajib dipilih.',
+            'account_number.required'      => 'Nomor rekening wajib diisi.',
+            'account_number.regex'         => 'Nomor rekening hanya boleh berisi angka.',
+            'account_holder_name.required' => 'Nama pemilik rekening wajib diisi.',
         ]);
 
         try {
@@ -93,17 +100,20 @@ class OrganizerController extends Controller
                     ->firstOrFail();
 
                 $amount = (float) $validated['amount'];
-                $currentBalance = (float) $organizer->balance;
 
-                if ($amount > $currentBalance) {
+                if ($amount > (float) $organizer->balance) {
                     throw new \RuntimeException('Saldo tidak mencukupi untuk withdraw.');
                 }
 
                 $organizer->decrement('balance', $amount);
 
                 OrganizerWithdrawal::query()->create([
-                    'organizer_id' => $organizer->id,
-                    'amount' => $amount,
+                    'organizer_id'        => $organizer->id,
+                    'amount'              => $amount,
+                    'bank_name'           => $validated['bank_name'],
+                    'account_number'      => $validated['account_number'],
+                    'account_holder_name' => $validated['account_holder_name'],
+                    'status'              => 'completed',
                 ]);
             });
         } catch (\RuntimeException $exception) {
@@ -112,6 +122,6 @@ class OrganizerController extends Controller
                 ->withInput();
         }
 
-        return back()->with('success', 'Withdraw berhasil diproses.');
+        return back()->with('success', 'Withdraw berhasil diproses. Dana akan dicairkan ke rekening Anda dalam 1-3 hari kerja.');
     }
 }
