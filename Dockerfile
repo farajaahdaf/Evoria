@@ -1,4 +1,3 @@
-# rebuild v2
 FROM php:8.4-cli
 
 RUN apt-get update && apt-get install -y \
@@ -31,7 +30,7 @@ RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
 
 WORKDIR /var/www
 
-COPY composer.json composer.lock ./
+COPY . .
 
 ENV COMPOSER_MEMORY_LIMIT=-1
 
@@ -41,9 +40,8 @@ RUN composer install \
     --no-interaction \
     --ignore-platform-reqs
 
-COPY . .
-
 RUN npm install
+
 RUN npm run build
 
 RUN rm -rf node_modules
@@ -59,10 +57,4 @@ RUN mkdir -p \
 
 EXPOSE 8080
 
-CMD php artisan config:clear \
-    && php artisan cache:clear \
-    && php artisan route:clear \
-    && php artisan view:clear \
-    && php artisan migrate --force \
-    && php artisan storage:link || true \
-    && php -S 0.0.0.0:8080 -t public
+CMD ["sh", "-c", "cd /var/www && php artisan config:clear && php artisan cache:clear && php artisan route:clear && php artisan view:clear && php artisan migrate --force && (php artisan storage:link || true) && php -S 0.0.0.0:8080 -t public"]
