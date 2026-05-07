@@ -53,8 +53,9 @@ RUN mkdir -p \
     storage/framework/testing \
     storage/logs \
     bootstrap/cache \
-    && chmod -R 777 storage bootstrap/cache
+    && chmod -R 777 storage \
+    && chmod -R 777 bootstrap/cache
 
 EXPOSE 8080
 
-CMD ["sh", "-c", "cd /var/www && php artisan config:clear && php artisan cache:clear && php artisan route:clear && php artisan view:clear && php artisan migrate --force && (php artisan storage:link || true) && php -S 0.0.0.0:8080 -t public"]
+CMD ["sh", "-c", "cd /var/www && chmod -R 777 storage bootstrap/cache && php artisan migrate --force && (php artisan storage:link || true) && php -S 0.0.0.0:8080 -t public"]
