@@ -47,13 +47,17 @@ RUN composer install \
     --no-dev \
     --optimize-autoloader \
     --no-interaction \
-    --ignore-platform-reqs
+    --ignore-platform-reqs \
+    --no-scripts
 
 # Copy project files
 COPY . .
 
 # Copy built frontend assets from node stage
 COPY --from=node-build /app/public/build ./public/build
+
+# Run post-install scripts now that artisan exists
+RUN php artisan package:discover --ansi || true
 
 # Prepare Laravel folders & permissions
 RUN mkdir -p \
