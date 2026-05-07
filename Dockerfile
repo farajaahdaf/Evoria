@@ -1,4 +1,4 @@
-FROM php:8.2-cli
+FROM php:8.4-cli
 
 RUN apt-get update && apt-get install -y \
     git curl zip unzip libzip-dev libpng-dev libonig-dev libxml2-dev \
@@ -31,8 +31,8 @@ RUN php artisan package:discover --ansi \
     && php artisan route:cache \
     && php artisan view:cache
 
-EXPOSE 8080
+EXPOSE ${PORT:-8080}
 
 CMD php artisan migrate --force \
     && php artisan storage:link --force \
-    && php -S 0.0.0.0:8080 -t public
+    && php -S 0.0.0.0:${PORT:-8080} -t public
