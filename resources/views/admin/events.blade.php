@@ -11,7 +11,6 @@
             <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
                 <div class="flex items-center justify-between mb-6">
                     <h3 class="text-xl font-bold text-gray-800">Event Approval Queue</h3>
-                    <a href="{{ route('admin.dashboard') }}" class="text-indigo-600 hover:underline">← Back to Dashboard</a>
                 </div>
 
                 @if(session('success'))

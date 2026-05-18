@@ -245,7 +245,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/all-organizers', [AdminController::class, 'allOrganizers'])->name('organizers.all');
         Route::get('/all-events', [AdminController::class, 'allEvents'])->name('events.all');
         Route::get('/draft-events', [AdminController::class, 'draftEvents'])->name('events.drafts');
-        Route::get('/transactions/overview', [AdminController::class, 'transactionsOverview'])->name('transactions.overview');
         Route::get('/transactions', [AdminController::class, 'transactions'])->name('transactions');
 
         // Existing review routes
