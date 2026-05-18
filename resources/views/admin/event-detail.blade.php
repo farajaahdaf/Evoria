@@ -19,7 +19,7 @@
                     <li>
                         <div class="flex items-center">
                             <svg class="w-4 h-4 text-slate-300" fill="currentColor" viewBox="0 0 20 20"><path d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"></path></svg>
-                            <a href="{{ route('admin.events') }}" class="ml-1 md:ml-2 hover:text-indigo-600 transition">EVENTS</a>
+                            <a href="{{ route('admin.events.all') }}" class="ml-1 md:ml-2 hover:text-indigo-600 transition">EVENTS</a>
                         </div>
                     </li>
                     <li aria-current="page">
@@ -43,15 +43,15 @@
 
                 <div class="flex flex-wrap gap-4">
                     @if($event->status === 'pending_review')
-                        <button type="button" x-data="" x-on:click.prevent="$dispatch('open-modal', 'confirm-event-draft')" class="inline-flex items-center px-8 py-4 bg-slate-100 text-slate-700 rounded-xl font-bold hover:bg-slate-200 transition shadow-sm transform hover:-translate-y-0.5">
+                        <button type="button" onclick="window.dispatchEvent(new CustomEvent('open-modal', { detail: 'confirm-event-draft' }))" class="inline-flex items-center px-8 py-4 bg-slate-100 text-slate-700 rounded-xl font-bold hover:bg-slate-200 transition shadow-sm transform hover:-translate-y-0.5">
                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5h14v14H5z"></path></svg>
                             Save as Draft
                         </button>
-                        <button type="button" x-data="" x-on:click.prevent="$dispatch('open-modal', 'confirm-event-rejection')" class="inline-flex items-center px-8 py-4 bg-white border border-red-200 text-red-600 rounded-xl font-bold hover:bg-red-50 transition shadow-sm transform hover:-translate-y-0.5">
+                        <button type="button" onclick="window.dispatchEvent(new CustomEvent('open-modal', { detail: 'confirm-event-rejection' }))" class="inline-flex items-center px-8 py-4 bg-white border border-red-200 text-red-600 rounded-xl font-bold hover:bg-red-50 transition shadow-sm transform hover:-translate-y-0.5">
                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                             Reject
                         </button>
-                        <button type="button" x-data="" x-on:click.prevent="$dispatch('open-modal', 'confirm-event-approval')" class="inline-flex items-center px-8 py-4 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition shadow-lg shadow-indigo-100 transform hover:-translate-y-0.5">
+                        <button type="button" onclick="window.dispatchEvent(new CustomEvent('open-modal', { detail: 'confirm-event-approval' }))" class="inline-flex items-center px-8 py-4 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition shadow-lg shadow-indigo-100 transform hover:-translate-y-0.5">
                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
                             Approve & Publish
                         </button>
@@ -60,16 +60,16 @@
                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5h14v14H5z"></path></svg>
                             Draft Review Parked
                         </div>
-                        <button type="button" x-data="" x-on:click.prevent="$dispatch('open-modal', 'confirm-event-rejection')" class="inline-flex items-center px-8 py-4 bg-white border border-red-200 text-red-600 rounded-xl font-bold hover:bg-red-50 transition shadow-sm transform hover:-translate-y-0.5">
+                        <button type="button" onclick="window.dispatchEvent(new CustomEvent('open-modal', { detail: 'confirm-event-rejection' }))" class="inline-flex items-center px-8 py-4 bg-white border border-red-200 text-red-600 rounded-xl font-bold hover:bg-red-50 transition shadow-sm transform hover:-translate-y-0.5">
                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                             Reject Event
                         </button>
-                        <button type="button" x-data="" x-on:click.prevent="$dispatch('open-modal', 'confirm-event-approval')" class="inline-flex items-center px-8 py-4 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition shadow-lg shadow-indigo-100 transform hover:-translate-y-0.5">
+                        <button type="button" onclick="window.dispatchEvent(new CustomEvent('open-modal', { detail: 'confirm-event-approval' }))" class="inline-flex items-center px-8 py-4 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition shadow-lg shadow-indigo-100 transform hover:-translate-y-0.5">
                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
                             Approve & Publish
                         </button>
                     @endif
-                    <button type="button" x-data="" x-on:click.prevent="$dispatch('open-modal', 'confirm-event-delete')" class="inline-flex items-center px-6 py-4 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition shadow-sm transform hover:-translate-y-0.5">
+                    <button type="button" onclick="window.dispatchEvent(new CustomEvent('open-modal', { detail: 'confirm-event-delete' }))" class="inline-flex items-center px-6 py-4 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition shadow-sm transform hover:-translate-y-0.5">
                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                         Delete Event
                     </button>
@@ -349,18 +349,18 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                 </svg>
             </div>
-            <h2 class="text-2xl font-bold text-center text-slate-900 mb-2">Hapus Event?</h2>
+            <h2 class="text-2xl font-bold text-center text-slate-900 mb-2">Delete Event?</h2>
             <p class="text-center text-slate-500 font-medium mb-10 leading-relaxed">
-                Apakah Anda yakin ingin menghapus <strong>"{{ $event->title }}"</strong>? Semua data tiket dan transaksi terkait juga akan terhapus secara permanen.
+                Are you sure you want to delete <strong>"{{ $event->title }}"</strong>? All related ticket and transaction data will also be permanently deleted.
             </p>
             <div class="flex flex-col sm:flex-row gap-4">
                 <button type="button" x-on:click="$dispatch('close')" class="flex-1 px-6 py-4 bg-slate-100 text-slate-600 rounded-2xl font-bold hover:bg-slate-200 transition">
-                    Batal
+                    Cancel
                 </button>
                 <form action="{{ route('admin.events.delete', $event->slug) }}" method="POST" class="flex-1">
                     @csrf @method('DELETE')
                     <button type="submit" class="w-full px-6 py-4 bg-red-600 text-white rounded-2xl font-bold hover:bg-red-700 transition shadow-lg shadow-red-100">
-                        Ya, Hapus Event
+                        Yes, Delete Event
                     </button>
                 </form>
             </div>

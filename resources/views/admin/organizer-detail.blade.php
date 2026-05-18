@@ -10,7 +10,7 @@
                     <li>
                         <div class="flex items-center">
                             <svg class="w-4 h-4 text-slate-300" fill="currentColor" viewBox="0 0 20 20"><path d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"></path></svg>
-                            <a href="{{ route('admin.organizers') }}" class="ml-1 md:ml-2 hover:text-indigo-600 transition">APPLICATIONS</a>
+                            <a href="{{ route('admin.organizers.all', ['status' => 'pending']) }}" class="ml-1 md:ml-2 hover:text-indigo-600 transition">APPLICATIONS</a>
                         </div>
                     </li>
                     <li aria-current="page">
@@ -35,7 +35,7 @@
                 <div class="flex flex-wrap gap-4">
                     @if($organizer->status === 'pending')
                     <div class="flex gap-4">
-                        <button type="button" x-data="" x-on:click.prevent="$dispatch('open-modal', 'confirm-rejection')" class="inline-flex items-center px-8 py-4 bg-white border border-red-200 text-red-600 rounded-xl font-bold hover:bg-red-50 transition shadow-sm transform hover:-translate-y-0.5">
+                        <button type="button" onclick="window.dispatchEvent(new CustomEvent('open-modal', { detail: 'confirm-rejection' }))" class="inline-flex items-center px-8 py-4 bg-white border border-red-200 text-red-600 rounded-xl font-bold hover:bg-red-50 transition shadow-sm transform hover:-translate-y-0.5">
                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                             Reject
                         </button>
@@ -160,7 +160,7 @@
                 <div id="documents" class="bg-white rounded-3xl p-8 shadow-sm border border-slate-100">
                     <div class="flex items-center justify-between mb-10">
                         <h3 class="text-xs font-bold tracking-widest text-indigo-500 uppercase">Verification Documents</h3>
-                        <a href="#" class="text-xs font-bold text-indigo-600 hover:text-indigo-800 transition">Upload Missing</a>
+                        <span class="text-xs font-bold text-slate-400">Upload Missing</span>
                     </div>
 
                     <div class="space-y-4">
