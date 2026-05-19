@@ -204,7 +204,7 @@ class AdminController extends Controller
 
     public function showOrganizer($id)
     {
-        $organizer = OrganizerProfile::with('user')->findOrFail($id);
+        $organizer = OrganizerProfile::with(['user', 'latestPortfolioReview'])->findOrFail($id);
         return view('admin.organizer-detail', compact('organizer'));
     }
 

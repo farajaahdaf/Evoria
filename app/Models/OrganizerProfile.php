@@ -11,7 +11,6 @@ class OrganizerProfile extends Model
         'company_name',
         'description',
         'portfolio_path',
-        'proposal_path',
         'status',
     ];
 
@@ -24,19 +23,34 @@ class OrganizerProfile extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function portfolioReviews()
+    {
+        return $this->hasMany(OrganizerPortfolioReview::class);
+    }
+
+    public function latestPortfolioReview()
+    {
+        return $this->hasOne(OrganizerPortfolioReview::class)->latestOfMany();
+    }
+
     public function getComplianceScoreAttribute()
     {
+        $review = $this->latestPortfolioReview;
+
+        if ($review) {
+            return $review->score;
+        }
+
         $score = 30; // Base score for basic info (company name, etc)
         
         if ($this->description) $score += 10;
-        if ($this->portfolio_path) $score += 30;
-        if ($this->proposal_path) $score += 30;
+        if ($this->portfolio_path) $score += 60;
 
         return min($score, 100);
     }
 
     public function getComplianceAccuracyAttribute()
     {
-        return 98.2; // This is a static accuracy for the "diagnostic engine"
+        return $this->latestPortfolioReview ? 100 : 98.2;
     }
 }

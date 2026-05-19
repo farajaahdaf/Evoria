@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\OrganizerProfile;
+use App\Services\PortfolioVerificationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -38,8 +39,7 @@ class OrganizerApplicationController extends Controller
         $validated = $request->validate([
             'company_name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:2000'],
-            'portfolio' => ['nullable', 'file', 'mimes:pdf,jpeg,png,jpg', 'max:5120'],
-            'proposal' => ['nullable', 'file', 'mimes:pdf', 'max:10240'],
+            'portfolio' => ['nullable', 'file', 'mimes:docx,pdf,jpeg,png,jpg', 'max:5120'],
         ]);
 
         $portfolioPath = null;
@@ -47,25 +47,25 @@ class OrganizerApplicationController extends Controller
             $portfolioPath = $request->file('portfolio')->store('organizers/portfolios', 'public');
         }
 
-        $proposalPath = null;
-        if ($request->hasFile('proposal')) {
-            $proposalPath = $request->file('proposal')->store('organizers/proposals', 'public');
-        }
-
-        DB::transaction(function () use ($user, $validated, $portfolioPath, $proposalPath) {
-            OrganizerProfile::updateOrCreate(
+        $profile = DB::transaction(function () use ($user, $validated, $portfolioPath) {
+            $profile = OrganizerProfile::updateOrCreate(
                 ['user_id' => $user->id],
                 [
                     'company_name' => $validated['company_name'],
                     'description' => $validated['description'] ?? null,
                     'portfolio_path' => $portfolioPath,
-                    'proposal_path' => $proposalPath,
                     'status' => 'pending',
                 ]
             );
 
             $user->update(['role' => 'organizer']);
+
+            return $profile;
         });
+
+        if ($portfolioPath) {
+            app(PortfolioVerificationService::class)->analyze($profile->load('user'));
+        }
 
         return redirect()
             ->route('organizer.pending')
