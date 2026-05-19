@@ -8,7 +8,7 @@
 <header class="bg-white border-b border-gray-200" x-data="{ organizerMenuOpen: false }">
     <div class="max-w-[1400px] mx-auto px-6 h-[80px] flex items-center justify-between gap-6">
         <div class="flex items-center gap-8">
-            <a href="{{ route('home') }}" class="flex items-center gap-1 shrink-0">
+            <a href="{{ route('organizer.dashboard') }}" class="flex items-center gap-1 shrink-0">
                 <x-application-logo class="h-10 w-auto" />
             </a>
 
@@ -53,9 +53,6 @@
                 x-transition:leave-end="opacity-0 -translate-y-1 scale-95"
                 class="absolute right-0 top-14 w-52 bg-white border border-slate-200 rounded-xl shadow-lg py-2 z-50"
             >
-                <a href="{{ route('organizer.balance') }}" class="block px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:text-primary transition-colors">Saldo</a>
-                <a href="{{ route('organizer.events.index') }}" class="block px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:text-primary transition-colors">Event Saya</a>
-                <a href="{{ route('organizer.events.create') }}" class="block px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:text-primary transition-colors">Buat Event</a>
                 <a href="{{ route('profile.edit') }}" class="block px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:text-primary transition-colors">Profile</a>
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf

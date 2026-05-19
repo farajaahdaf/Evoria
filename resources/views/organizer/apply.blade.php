@@ -43,25 +43,38 @@
                             </div>
                         </div>
 
-                        <!-- Step 2: Files -->
+                        <!-- Step 2: Portfolio -->
                         <div x-show="step === 2" class="space-y-8" x-cloak x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 transform translate-x-4" x-transition:enter-end="opacity-100 transform translate-x-0">
-                            <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
+                            <div class="mx-auto max-w-xl space-y-4">
+                                <div class="rounded-3xl border border-blue-100 bg-blue-50/60 p-5">
+                                    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                                        <div class="flex items-start gap-3 text-left">
+                                            <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white text-primary">
+                                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                                            </div>
+                                            <div>
+                                                <h3 class="text-sm font-black text-slate-900">Download template portfolio</h3>
+                                                <p class="mt-1 text-xs leading-5 text-slate-500">Isi template DOCX dari Evoria terlebih dahulu sebelum mengunggah portfolio.</p>
+                                            </div>
+                                        </div>
+                                        <a
+                                            href="{{ asset('templates/template_portofolio_eo_evoria.docx') }}"
+                                            download
+                                            class="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-4 py-2.5 text-xs font-extrabold text-white shadow-sm transition hover:bg-primary/90"
+                                        >
+                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v10m0 0l-4-4m4 4l4-4M4 20h16"></path></svg>
+                                            Download DOCX
+                                        </a>
+                                    </div>
+                                </div>
+
                                 <div class="rounded-3xl border-2 border-dashed border-slate-200 bg-slate-50/50 p-8 text-center transition hover:border-primary/50">
                                     <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-100 text-primary">
                                         <svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                                     </div>
-                                    <label for="portfolio" class="block text-base font-bold text-slate-900">File Portofolio</label>
-                                    <p class="mt-1 text-xs text-slate-500">PDF/Gambar (Maks. 5MB)</p>
-                                    <input id="portfolio" name="portfolio" type="file" accept=".pdf,image/*" class="mt-6 block w-full text-xs text-slate-500 file:mr-4 file:rounded-full file:border-0 file:bg-primary file:px-4 file:py-2 file:text-xs file:font-bold file:text-white hover:file:bg-primary/90">
-                                </div>
-
-                                <div class="rounded-3xl border-2 border-dashed border-slate-200 bg-slate-50/50 p-8 text-center transition hover:border-primary/50">
-                                    <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-600">
-                                        <svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                                    </div>
-                                    <label for="proposal" class="block text-base font-bold text-slate-900">Proposal Event</label>
-                                    <p class="mt-1 text-xs text-slate-500">Hanya PDF (Maks. 10MB)</p>
-                                    <input id="proposal" name="proposal" type="file" accept=".pdf" class="mt-6 block w-full text-xs text-slate-500 file:mr-4 file:rounded-full file:border-0 file:bg-emerald-600 file:px-4 file:py-2 file:text-xs file:font-bold file:text-white hover:file:bg-emerald-700">
+                                    <label for="portfolio" class="block text-base font-bold text-slate-900">Upload portfolio yang sudah diisi</label>
+                                    <p class="mt-1 text-xs text-slate-500">DOCX, PDF, atau gambar. Maks. 5MB.</p>
+                                    <input id="portfolio" name="portfolio" type="file" accept=".docx,.pdf,image/*" class="mt-6 block w-full text-xs text-slate-500 file:mr-4 file:rounded-full file:border-0 file:bg-primary file:px-4 file:py-2 file:text-xs file:font-bold file:text-white hover:file:bg-primary/90">
                                 </div>
                             </div>
 

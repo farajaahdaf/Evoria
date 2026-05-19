@@ -9,7 +9,11 @@
         'organizer' => 'Organizer',
         default => 'User',
     };
-    $logoRoute = $role === 'admin' ? route('admin.dashboard') : route('home');
+    $logoRoute = match($role) {
+        'admin' => route('admin.dashboard'),
+        'organizer' => route('organizer.dashboard'),
+        default => route('home'),
+    };
 @endphp
 
 <header class="bg-white border-b border-gray-200" x-data="{ menuOpen: false }">
@@ -71,12 +75,6 @@
                 x-transition:leave-end="opacity-0 -translate-y-1 scale-95"
                 class="absolute right-0 top-14 w-56 bg-white border border-slate-200 rounded-xl shadow-lg py-2 z-50"
             >
-                @if($role === 'organizer')
-                    <a href="{{ route('organizer.balance') }}" class="block px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:text-primary transition-colors">Saldo</a>
-                    <a href="{{ route('organizer.events.index') }}" class="block px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:text-primary transition-colors">Event Saya</a>
-                    <a href="{{ route('organizer.events.create') }}" class="block px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:text-primary transition-colors">Buat Event</a>
-                    <div class="my-1 border-t border-slate-100"></div>
-                @endif
                 <a href="{{ route('profile.edit') }}" class="block px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:text-primary transition-colors">Profile</a>
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
