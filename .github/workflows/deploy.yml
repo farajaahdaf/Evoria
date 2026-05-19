@@ -1,0 +1,56 @@
+name: Build & Deploy to Azure
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  ACR_REGISTRY: evoriacr.azurecr.io
+  IMAGE_NAME: evoria-web
+  APP_NAME: evoria-app
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Login to ACR
+        uses: docker/login-action@v3
+        with:
+          registry: evoriacr.azurecr.io
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+
+      - name: Build and push image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            evoriacr.azurecr.io/evoria-web:${{ github.sha }}
+            evoriacr.azurecr.io/evoria-web:latest
+          cache-from: type=registry,ref=evoriacr.azurecr.io/evoria-web:latest
+          cache-to: type=inline
+
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: evoria-app
+          publish-profile: ${{ secrets.AZURE_PUBLISH_PROFILE }}
+          images: evoriacr.azurecr.io/evoria-web:${{ github.sha }}
+
+      - name: Health check
+        run: |
+          echo "Waiting for deployment..."
+          sleep 60
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://evoria-app.azurewebsites.net/health)
+          echo "Health check status: $STATUS"
+          if [ "$STATUS" != "200" ]; then
+            echo "⚠ Health check returned $STATUS - deployment may still be starting"
+          else
+            echo "✓ Deployment healthy!"
+          fi
