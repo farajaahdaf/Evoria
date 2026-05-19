@@ -1,80 +1,63 @@
-# Stage 1: Build frontend assets
+# Stage 1: Frontend assets
 FROM node:20-slim AS node-build
-
 WORKDIR /app
-
-COPY package*.json ./
+COPY package*.json vite.config.js postcss.config.js tailwind.config.js ./
 RUN npm ci
-
 COPY . .
 RUN npm run build
 
-# Stage 2: PHP application
-FROM php:8.4-cli
+# Stage 2: Composer dependencies
+FROM composer:2 AS vendor
+WORKDIR /app
+COPY composer.json composer.lock ./
+RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts --ignore-platform-reqs
 
-# Install system dependencies + PHP extensions (no nodejs/npm)
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    git \
-    curl \
-    zip \
-    unzip \
-    libzip-dev \
+# Stage 3: Production image
+FROM php:8.4-fpm-alpine
+
+# System dependencies + PHP extensions
+RUN apk add --no-cache \
+    nginx \
+    supervisor \
+    mysql-client \
     libpng-dev \
-    libonig-dev \
+    libzip-dev \
+    oniguruma-dev \
     libxml2-dev \
-    && docker-php-ext-install \
-    pdo \
-    pdo_mysql \
-    mbstring \
-    zip \
-    exif \
-    pcntl \
-    bcmath \
-    gd \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+    freetype-dev \
+    libjpeg-turbo-dev \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install pdo_mysql mbstring zip exif pcntl bcmath gd opcache \
+    && pecl install redis && docker-php-ext-enable redis \
+    && rm -rf /tmp/pear
 
-# Install Composer
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+# PHP-FPM config: listen on 127.0.0.1:9000
+RUN sed -i 's|listen = /var/run/php-fpm.sock|listen = 127.0.0.1:9000|' /usr/local/etc/php-fpm.d/www.conf \
+    && sed -i 's|;listen.owner = nobody|listen.owner = nobody|' /usr/local/etc/php-fpm.d/www.conf
 
 WORKDIR /var/www
 
-# Copy composer files first for layer caching
-COPY composer.json composer.lock ./
-
-ENV COMPOSER_MEMORY_LIMIT=-1
-RUN composer install \
-    --no-dev \
-    --optimize-autoloader \
-    --no-interaction \
-    --ignore-platform-reqs \
-    --no-scripts
-
-# Copy project files
-COPY . .
-
-# Copy built frontend assets from node stage
+# Copy dependencies
+COPY --from=vendor /app/vendor ./vendor
 COPY --from=node-build /app/public/build ./public/build
 
-# Run post-install scripts now that artisan exists
-RUN php artisan package:discover --ansi || true
+# Copy source
+COPY . .
 
-# Prepare Laravel folders & permissions
-RUN mkdir -p \
-    storage/framework/cache \
-    storage/framework/sessions \
-    storage/framework/views \
-    storage/logs \
-    bootstrap/cache \
-    && chmod -R 777 storage bootstrap/cache
+# Post-install scripts
+RUN php artisan package:discover --ansi 2>/dev/null || true
 
-# Cache routes and views at build time (no env vars needed)
-RUN php artisan route:clear || true \
-    && php artisan view:clear || true \
-    && php artisan route:cache || true \
-    && php artisan view:cache || true
+# Prepare storage
+RUN mkdir -p storage/framework/cache storage/framework/sessions \
+    storage/framework/views storage/logs bootstrap/cache \
+    && chown -R www-data:www-data storage bootstrap/cache \
+    && chmod -R 775 storage bootstrap/cache
 
-EXPOSE 8080
+# Nginx + supervisord config
+COPY docker/nginx.conf /etc/nginx/nginx.conf
+COPY docker/supervisord.conf /etc/supervisord.conf
+COPY docker/start.sh /start.sh
+RUN chmod +x /start.sh
 
-# config:cache runs at runtime so it picks up actual env vars (DB_HOST, etc.)
-CMD ["sh", "-c", "chmod -R 777 storage bootstrap/cache && php artisan config:cache && php artisan migrate --force && php artisan storage:link || true && php -S 0.0.0.0:8080 -t public"]
+EXPOSE 80
+CMD ["/start.sh"]

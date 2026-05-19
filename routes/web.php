@@ -1,11 +1,22 @@
 <?php
 
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Redis;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\OrganizerController;
 use App\Http\Controllers\OrganizerApplicationController;
 use App\Http\Controllers\Organizer\EventController;
 use Illuminate\Support\Facades\Route;
+
+Route::get('/health', function () {
+    try {
+        DB::connection()->getPdo();
+        return response()->json(['status' => 'ok', 'db' => 'ok'], 200);
+    } catch (\Throwable $e) {
+        return response()->json(['status' => 'down', 'error' => $e->getMessage()], 503);
+    }
+});
 
 Route::get('/', function (Illuminate\Http\Request $request) {
     $search = trim((string) $request->query('q', ''));
