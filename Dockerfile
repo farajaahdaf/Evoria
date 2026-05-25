@@ -12,52 +12,56 @@ WORKDIR /app
 COPY composer.json composer.lock ./
 RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts --ignore-platform-reqs
 
-# Stage 3: Production image
-FROM php:8.4-fpm-alpine
+# Stage 3: Production image (Debian-based — lebih stabil dari Alpine)
+FROM php:8.4-fpm-bookworm
 
-# System dependencies + PHP extensions
-RUN apk add --no-cache \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     nginx \
     supervisor \
-    mysql-client \
+    default-mysql-client \
     libpng-dev \
     libzip-dev \
-    oniguruma-dev \
+    libonig-dev \
     libxml2-dev \
-    freetype-dev \
-    libjpeg-turbo-dev \
+    libfreetype6-dev \
+    libjpeg62-turbo-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install pdo_mysql mbstring zip exif pcntl bcmath gd opcache \
     && pecl install redis && docker-php-ext-enable redis \
-    && rm -rf /tmp/pear
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# PHP-FPM config: listen on 127.0.0.1:9000
-RUN sed -i 's|listen = /var/run/php-fpm.sock|listen = 127.0.0.1:9000|' /usr/local/etc/php-fpm.d/www.conf \
-    && sed -i 's|;listen.owner = nobody|listen.owner = nobody|' /usr/local/etc/php-fpm.d/www.conf
+# PHP-FPM listen on TCP
+RUN sed -i 's|listen = /run/php/php8.4-fpm.sock|listen = 127.0.0.1:9000|' \
+    /usr/local/etc/php-fpm.d/www.conf 2>/dev/null || \
+    echo 'listen = 127.0.0.1:9000' >> /usr/local/etc/php-fpm.d/www.conf
 
 WORKDIR /var/www
 
-# Copy dependencies
 COPY --from=vendor /app/vendor ./vendor
 COPY --from=node-build /app/public/build ./public/build
-
-# Copy source
 COPY . .
 
-# Post-install scripts
 RUN php artisan package:discover --ansi 2>/dev/null || true
 
-# Prepare storage
 RUN mkdir -p storage/framework/cache storage/framework/sessions \
     storage/framework/views storage/logs bootstrap/cache \
     && chown -R www-data:www-data storage bootstrap/cache \
     && chmod -R 775 storage bootstrap/cache
 
-# Nginx + supervisord config
 COPY docker/nginx.conf /etc/nginx/nginx.conf
 COPY docker/supervisord.conf /etc/supervisord.conf
+COPY docker/php-fpm-pool.conf /usr/local/etc/php-fpm.d/www.conf
 COPY docker/start.sh /start.sh
 RUN chmod +x /start.sh
+
+# OPcache tuning untuk low-memory instance
+RUN echo "opcache.enable=1\n\
+opcache.memory_consumption=64\n\
+opcache.interned_strings_buffer=8\n\
+opcache.max_accelerated_files=4000\n\
+opcache.revalidate_freq=0\n\
+opcache.save_comments=1\n\
+opcache.fast_shutdown=1" > /usr/local/etc/php/conf.d/opcache.ini
 
 EXPOSE 80
 CMD ["/start.sh"]
