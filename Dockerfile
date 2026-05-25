@@ -16,6 +16,7 @@ RUN composer install --no-dev --optimize-autoloader --no-interaction --no-script
 FROM php:8.4-fpm-bookworm
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    $PHPIZE_DEPS \
     nginx \
     supervisor \
     default-mysql-client \
@@ -28,12 +29,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install pdo_mysql mbstring zip exif pcntl bcmath gd opcache \
     && pecl install redis && docker-php-ext-enable redis \
+    && apt-get purge -y $PHPIZE_DEPS \
+    && apt-get autoremove -y \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
-
-# PHP-FPM listen on TCP
-RUN sed -i 's|listen = /run/php/php8.4-fpm.sock|listen = 127.0.0.1:9000|' \
-    /usr/local/etc/php-fpm.d/www.conf 2>/dev/null || \
-    echo 'listen = 127.0.0.1:9000' >> /usr/local/etc/php-fpm.d/www.conf
 
 WORKDIR /var/www
 
