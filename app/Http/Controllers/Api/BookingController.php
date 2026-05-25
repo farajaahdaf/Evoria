@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\GenerateETicketsJob;
 use App\Models\Order;
 use App\Models\Ticket;
 use App\Services\MidtransService;
+use App\Services\WaitingRoomService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -14,8 +16,14 @@ use RuntimeException;
 
 class BookingController extends Controller
 {
-    public function book(Request $request, int $eventId, MidtransService $midtrans): JsonResponse
+    public function book(Request $request, int $eventId, MidtransService $midtrans, WaitingRoomService $waitingRoom): JsonResponse
     {
+        if (! $waitingRoom->isAdmitted($eventId, $request->user()->id)) {
+            return response()->json([
+                'message' => 'Sesi antrian Anda belum aktif atau sudah berakhir. Silakan masuk antrian lagi.',
+            ], 423);
+        }
+
         $request->validate([
             'ticket_id' => ['required', 'exists:tickets,id'],
             'quantity'  => ['required', 'integer', 'min:1', 'max:5'],
@@ -66,16 +74,9 @@ class BookingController extends Controller
             // Free ticket: mark paid immediately and generate e-tickets
             if ((float) $order->total_amount <= 0) {
                 $order->update(['status' => 'paid', 'payment_method' => 'free']);
-                $order->loadMissing('orderItems.eTickets');
+                GenerateETicketsJob::dispatchSync($order->id);
 
-                foreach ($order->orderItems as $item) {
-                    $missing = max($item->quantity - $item->eTickets->count(), 0);
-                    for ($i = 0; $i < $missing; $i++) {
-                        $item->eTickets()->create([
-                            'ticket_code' => 'TCKT-' . Str::upper(Str::random(12)),
-                        ]);
-                    }
-                }
+                $waitingRoom->releaseSlot($eventId, $request->user()->id);
 
                 return response()->json([
                     'message'      => 'Tiket gratis berhasil dipesan.',
@@ -93,6 +94,8 @@ class BookingController extends Controller
             $snapResponse = $midtrans->createSnapTransaction($order);
 
             $order->update(['snap_token' => $snapResponse['token'] ?? null]);
+
+            $waitingRoom->releaseSlot($eventId, $request->user()->id);
 
             return response()->json([
                 'message'      => 'Transaksi berhasil dibuat.',
