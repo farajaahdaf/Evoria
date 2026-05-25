@@ -34,7 +34,6 @@ class GenerateETicketsJob implements ShouldQueue
             for ($i = 0; $i < $missing; $i++) {
                 $item->eTickets()->create([
                     'ticket_code' => 'TCKT-' . Str::upper(Str::random(12)),
-                    'status' => 'issued',
                 ]);
             }
         }
