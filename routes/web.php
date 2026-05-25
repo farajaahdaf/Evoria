@@ -244,6 +244,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::middleware('role:attendee')->prefix('attendee')->name('attendee.')->group(function () {
         Route::get('/dashboard', [\App\Http\Controllers\AttendeeController::class, 'dashboard'])->name('dashboard');
+
+        // Virtual Waiting Room (gate sebelum booking)
+        Route::post('/queue/{eventId}/join', [\App\Http\Controllers\Api\WaitingRoomController::class, 'join'])->name('queue.join');
+        Route::get('/queue/{eventId}/status', [\App\Http\Controllers\Api\WaitingRoomController::class, 'status'])->name('queue.status');
+        Route::post('/queue/{eventId}/leave', [\App\Http\Controllers\Api\WaitingRoomController::class, 'leave'])->name('queue.leave');
+
         Route::post('/book/{eventId}', [\App\Http\Controllers\AttendeeController::class, 'bookTicket'])->name('book');
         Route::post('/orders/{order}/refresh-status', [\App\Http\Controllers\AttendeeController::class, 'refreshOrderStatus'])->name('orders.refresh-status');
     });

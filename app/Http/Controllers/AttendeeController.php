@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\GenerateETicketsJob;
 use App\Models\Order;
 use App\Models\Ticket;
 use App\Services\MidtransService;
+use App\Services\WaitingRoomService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
@@ -29,8 +31,14 @@ class AttendeeController extends Controller
         ]);
     }
 
-    public function bookTicket(Request $request, $eventId, MidtransService $midtrans)
+    public function bookTicket(Request $request, $eventId, MidtransService $midtrans, WaitingRoomService $waitingRoom)
     {
+        if (! $waitingRoom->isAdmitted((int) $eventId, $request->user()->id)) {
+            return response()->json([
+                'message' => 'Sesi antrian Anda belum aktif atau sudah berakhir. Silakan masuk antrian lagi.',
+            ], 423);
+        }
+
         $request->validate([
             'ticket_id' => ['required', 'exists:tickets,id'],
             'quantity' => ['required', 'integer', 'min:1', 'max:5'],
@@ -84,17 +92,9 @@ class AttendeeController extends Controller
                     'payment_method' => 'free',
                 ]);
 
-                $order->loadMissing('orderItems.eTickets');
+                GenerateETicketsJob::dispatchSync($order->id);
 
-                foreach ($order->orderItems as $item) {
-                    $missingCount = max($item->quantity - $item->eTickets->count(), 0);
-
-                    for ($i = 0; $i < $missingCount; $i++) {
-                        $item->eTickets()->create([
-                            'ticket_code' => 'TCKT-' . Str::upper(Str::random(12)),
-                        ]);
-                    }
-                }
+                $waitingRoom->releaseSlot((int) $eventId, $request->user()->id);
 
                 return response()->json([
                     'message' => 'Tiket gratis berhasil dipesan.',
@@ -113,6 +113,8 @@ class AttendeeController extends Controller
             $order->update([
                 'snap_token' => $snapResponse['token'] ?? null,
             ]);
+
+            $waitingRoom->releaseSlot((int) $eventId, $request->user()->id);
 
             return response()->json([
                 'message' => 'Transaksi berhasil dibuat.',
