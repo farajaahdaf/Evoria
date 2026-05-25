@@ -4,7 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Daftar Konser Terbaru - {{ config('app.name', 'Evoria') }}</title>
-    
+    <link rel="icon" type="image/png" href="{{ asset('images/favicon-icon.png') }}">
+
     <!-- Fonts & Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
@@ -307,7 +308,7 @@
     <!-- Chatbot FAB -->
     <div class="fixed bottom-8 right-8 z-[60] fab-container">
         <div class="fab-tooltip absolute top-1/2 left-0 -translate-y-1/2 opacity-0 pointer-events-none transition-all duration-300 ease-out whitespace-nowrap bg-slate-900 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-xl">
-            Tanya Evoria AI
+            Males cari event? Tanya aja ke Evoria AI!
         </div>
         <button @click="chatbotOpen = !chatbotOpen" class="size-16 bg-gradient-to-tr from-primary to-[#4F46E5] text-white rounded-[24px] flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-all duration-200 group relative">
             <span x-show="!chatbotOpen" class="material-symbols-outlined text-3xl transition-transform group-hover:rotate-12">smart_toy</span>
