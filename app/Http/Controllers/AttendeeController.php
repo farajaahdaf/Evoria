@@ -159,6 +159,12 @@ class AttendeeController extends Controller
 
         $order = $paymentController->syncOrder($order, $midtrans);
 
+        // Jika sudah paid, pastikan e-tickets sudah ada sebelum response dikirim
+        // sehingga QR langsung muncul tanpa perlu refresh manual.
+        if ($order->status === 'paid') {
+            GenerateETicketsJob::dispatchSync($order->id);
+        }
+
         return response()->json([
             'message' => 'Status order berhasil disinkronkan.',
             'status' => $order->status,
