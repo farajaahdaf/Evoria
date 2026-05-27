@@ -500,7 +500,11 @@
             const originalLabel = submitButton ? submitButton.textContent : '';
 
             if (!window.snap && {{ $midtransEnabled ? 'true' : 'false' }}) {
-                alert('Snap.js Midtrans belum termuat.');
+                await evModal.alert({
+                    title: 'Pembayaran Tidak Tersedia',
+                    message: 'Snap.js Midtrans belum termuat. Coba muat ulang halaman.',
+                    icon: 'danger',
+                });
                 return false;
             }
 
@@ -530,25 +534,14 @@
                     return false;
                 }
 
-                window.snap.pay(payload.snap_token, {
-                    onSuccess: async function () {
-                        await syncOrderStatus(payload.order_id);
-                        window.location.href = "{{ route('attendee.dashboard') }}";
-                    },
-                    onPending: async function () {
-                        await syncOrderStatus(payload.order_id);
-                        window.location.href = "{{ route('attendee.dashboard') }}";
-                    },
-                    onError: function () {
-                        alert('Pembayaran gagal diproses. Silakan coba lagi.');
-                    },
-                    onClose: async function () {
-                        await syncOrderStatus(payload.order_id);
-                        window.location.href = "{{ route('attendee.dashboard') }}";
-                    }
-                });
+                // Redirect ke halaman checkout khusus (embedded Snap)
+                window.location.href = payload.checkout_url;
             } catch (error) {
-                alert(error.message || 'Terjadi kesalahan saat memulai pembayaran.');
+                await evModal.alert({
+                    title: 'Pembayaran Gagal',
+                    message: error.message || 'Terjadi kesalahan saat memulai pembayaran.',
+                    icon: 'danger',
+                });
             } finally {
                 if (submitButton) {
                     submitButton.disabled = false;
@@ -561,7 +554,6 @@
 
         async function syncOrderStatus(orderId) {
             if (!orderId) return;
-
             try {
                 await fetch(`/attendee/orders/${orderId}/refresh-status`, {
                     method: 'POST',
@@ -575,6 +567,23 @@
                 console.warn('Gagal sinkronisasi status order:', error);
             }
         }
+
+        async function cancelOrder(orderId) {
+            if (!orderId) return;
+            try {
+                await fetch(`/attendee/orders/${orderId}/cancel`, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content
+                            || document.querySelector('input[name="_token"]')?.value,
+                    },
+                });
+            } catch (error) {
+                console.warn('Gagal membatalkan order:', error);
+            }
+        }
     </script>
+    <x-ev-modal />
 </body>
 </html>

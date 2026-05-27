@@ -178,7 +178,9 @@
                                                 @foreach($item->eTickets as $et)
                                                     <div class="bg-white border text-center rounded-xl p-4 flex flex-col items-center shadow-sm relative overflow-hidden">
                                                         <div class="relative w-[150px] h-[150px] flex items-center justify-center bg-white p-2 rounded-lg border border-slate-100 mb-3">
-                                                            <div id="qr-{{ $et->id }}"></div>
+                                                            <div class="w-full h-full [&>svg]:w-full [&>svg]:h-full">
+                                                                {!! \SimpleSoftwareIO\QrCode\Facades\QrCode::format('svg')->size(150)->margin(0)->color(16, 54, 125)->generate($et->ticket_code) !!}
+                                                            </div>
                                                             @if(isset($et->status) && $et->status === 'used')
                                                                 <div class="absolute inset-0 bg-white/80 flex items-center justify-center z-10">
                                                                     <span class="bg-slate-800 text-white text-[10px] font-bold px-2 py-1 rounded rotate-[-15deg] whitespace-nowrap shadow-md">SUDAH DIGUNAKAN</span>
@@ -209,16 +211,30 @@
                                     @endif
                                 </div>
 
-                                @if($order->status === 'pending' && $order->snap_token && $midtransEnabled)
+                                @if($order->status === 'pending')
                                     <div class="mt-5 pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
-                                        <p class="text-sm text-amber-600 font-medium">Awaiting payment completion...</p>
-                                        <button
-                                            type="button"
-                                            class="inline-flex items-center rounded-lg bg-primary px-6 py-2.5 text-sm font-bold text-white hover:bg-primary/90 transition-colors shadow-md hover:shadow-lg"
-                                            onclick="payPendingOrder('{{ $order->snap_token }}', {{ $order->id }})"
-                                        >
-                                            Pay Now
-                                        </button>
+                                        <p class="text-sm text-amber-600 font-medium flex items-center gap-1.5">
+                                            <span class="inline-block w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                                            Menunggu pembayaran
+                                        </p>
+                                        <div class="flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                class="inline-flex items-center rounded-lg border border-red-300 px-4 py-2 text-sm font-bold text-red-600 hover:bg-red-50 transition-colors"
+                                                onclick="confirmCancelOrder({{ $order->id }}, '{{ $order->order_number }}')"
+                                            >
+                                                Batalkan
+                                            </button>
+                                            @if($order->snap_token && $midtransEnabled)
+                                            <button
+                                                type="button"
+                                                class="inline-flex items-center rounded-lg bg-primary px-6 py-2.5 text-sm font-bold text-white hover:bg-primary/90 transition-colors shadow-md hover:shadow-lg"
+                                                onclick="payPendingOrder('{{ $order->snap_token }}', {{ $order->id }})"
+                                            >
+                                                Bayar Sekarang
+                                            </button>
+                                            @endif
+                                        </div>
                                     </div>
                                 @endif
                             </div>
@@ -251,7 +267,6 @@
         <script>
             async function syncOrderStatus(orderId) {
                 if (!orderId) return;
-
                 try {
                     await fetch(`/attendee/orders/${orderId}/refresh-status`, {
                         method: 'POST',
@@ -265,63 +280,43 @@
                 }
             }
 
-            function payPendingOrder(snapToken, orderId) {
-                if (!window.snap) {
-                    alert('Snap.js Midtrans belum termuat.');
-                    return;
-                }
-
-                window.snap.pay(snapToken, {
-                    onSuccess: async function () {
-                        await syncOrderStatus(orderId);
-                        window.location.reload();
-                    },
-                    onPending: async function () {
-                        await syncOrderStatus(orderId);
-                        window.location.reload();
-                    },
-                    onError: function () {
-                        alert('Pembayaran gagal diproses. Silakan coba lagi.');
-                    },
-                    onClose: async function () {
-                        await syncOrderStatus(orderId);
-                        window.location.reload();
-                    }
+            async function confirmCancelOrder(orderId, orderNumber) {
+                const ok = await evModal.confirm({
+                    title: 'Batalkan Order?',
+                    message: `Order ${orderNumber} akan dibatalkan.\nStok tiket akan dikembalikan dan order tidak bisa dipulihkan.`,
+                    confirmText: 'Ya, Batalkan',
+                    cancelText: 'Kembali',
+                    danger: true,
                 });
+                if (!ok) return;
+
+                try {
+                    const res = await fetch(`/attendee/orders/${orderId}/cancel`, {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        },
+                    });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.message || 'Gagal membatalkan order.');
+                    window.location.reload();
+                } catch (err) {
+                    await evModal.alert({
+                        title: 'Terjadi Kesalahan',
+                        message: err.message || 'Terjadi kesalahan, coba lagi.',
+                        icon: 'danger',
+                    });
+                }
+            }
+
+            function payPendingOrder(snapToken, orderId) {
+                // Redirect ke halaman checkout khusus (embedded Snap, tidak popup)
+                window.location.href = `/attendee/checkout/${orderId}`;
             }
         </script>
     @endif
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const tickets = [
-            @foreach($orders as $order)
-                @if($order->status === 'paid')
-                    @foreach($order->orderItems as $item)
-                        @if($item->eTickets && $item->eTickets->count() > 0)
-                            @foreach($item->eTickets as $et)
-                                { id: '{{ $et->id }}', code: '{{ $et->ticket_code }}' },
-                            @endforeach
-                        @endif
-                    @endforeach
-                @endif
-            @endforeach
-        ];
-        
-        tickets.forEach(function(t) {
-            let container = document.getElementById('qr-' + t.id);
-            if(container) {
-                new QRCode(container, {
-                    text: t.code,
-                    width: 150,
-                    height: 150,
-                    colorDark: '#10367d',
-                    colorLight: '#ffffff'
-                });
-            }
-        });
-    });
-    </script>
+    <x-ev-modal />
 </body>
 </html>

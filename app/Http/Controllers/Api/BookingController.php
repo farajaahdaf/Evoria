@@ -97,13 +97,17 @@ class BookingController extends Controller
 
             $waitingRoom->releaseSlot($eventId, $request->user()->id);
 
+            $pendingMinutes = (int) config('waitingroom.pending_timeout_minutes', 30);
+
             return response()->json([
-                'message'      => 'Transaksi berhasil dibuat.',
-                'order_id'     => $order->id,
-                'order_number' => $order->order_number,
-                'snap_token'   => $order->snap_token,
-                'redirect_url' => $snapResponse['redirect_url'] ?? null,
-                'is_free'      => false,
+                'message'            => 'Transaksi berhasil dibuat.',
+                'order_id'           => $order->id,
+                'order_number'       => $order->order_number,
+                'snap_token'         => $order->snap_token,
+                'redirect_url'       => $snapResponse['redirect_url'] ?? null,
+                'is_free'            => false,
+                'payment_expires_at' => now()->addMinutes($pendingMinutes)->toIso8601String(),
+                'payment_timeout_minutes' => $pendingMinutes,
             ]);
         } catch (\Throwable $e) {
             if ($order instanceof Order) {

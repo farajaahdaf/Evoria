@@ -15,6 +15,30 @@ use RuntimeException;
 
 class AttendeeController extends Controller
 {
+    public function showCheckout(Request $request, Order $order)
+    {
+        // Pastikan order milik user yang sedang login
+        abort_unless($order->user_id === $request->user()->id, 403);
+
+        // Hanya order pending yang bisa dibayar
+        abort_unless($order->status === 'pending', 422, 'Order ini tidak dapat dibayar.');
+
+        // Harus punya snap token
+        abort_unless(filled($order->snap_token), 422, 'Snap token tidak ditemukan.');
+
+        $order->load('orderItems.ticket.event');
+
+        $pendingMinutes = (int) config('waitingroom.pending_timeout_minutes', 30);
+
+        return view('attendee.checkout', [
+            'order'                  => $order,
+            'midtransClientKey'      => config('services.midtrans.client_key'),
+            'midtransSnapJsUrl'      => app(MidtransService::class)->getSnapJsUrl(),
+            'paymentTimeoutMinutes'  => $pendingMinutes,
+            'paymentExpiresAt'       => $order->created_at->addMinutes($pendingMinutes)->toIso8601String(),
+        ]);
+    }
+
     public function dashboard(Request $request)
     {
         $orders = $request->user()
@@ -117,11 +141,10 @@ class AttendeeController extends Controller
             $waitingRoom->releaseSlot((int) $eventId, $request->user()->id);
 
             return response()->json([
-                'message' => 'Transaksi berhasil dibuat.',
-                'order_id' => $order->id,
+                'message'      => 'Transaksi berhasil dibuat.',
+                'order_id'     => $order->id,
                 'order_number' => $order->order_number,
-                'snap_token' => $order->snap_token,
-                'redirect_url' => $snapResponse['redirect_url'] ?? null,
+                'checkout_url' => route('attendee.checkout', $order->id),
             ]);
         } catch (\Throwable $exception) {
             if ($order instanceof Order) {
@@ -144,6 +167,31 @@ class AttendeeController extends Controller
                     : 'Gagal membuat transaksi Midtrans.',
             ], 422);
         }
+    }
+
+    /**
+     * Cancel a pending order and immediately return the reserved stock.
+     * Called via AJAX when the user closes Snap without paying (onClose / onError).
+     */
+    public function cancelOrder(Request $request, Order $order): JsonResponse
+    {
+        abort_unless($order->user_id === $request->user()->id, 403);
+
+        if ($order->status !== 'pending') {
+            return response()->json(['message' => 'Hanya order pending yang bisa dibatalkan.'], 422);
+        }
+
+        DB::transaction(function () use ($order) {
+            $order->loadMissing('orderItems.ticket');
+
+            foreach ($order->orderItems as $item) {
+                $item->ticket?->increment('available_qty', $item->quantity);
+            }
+
+            $order->update(['status' => 'cancelled']);
+        });
+
+        return response()->json(['message' => 'Order dibatalkan, stok dikembalikan.']);
     }
 
     public function refreshOrderStatus(Request $request, Order $order, MidtransService $midtrans, MidtransPaymentController $paymentController): JsonResponse

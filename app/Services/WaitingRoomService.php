@@ -13,14 +13,14 @@ class WaitingRoomService
         return (bool) config('waitingroom.enabled', true);
     }
 
+    /**
+     * How many users may hold a checkout slot at the same time (per event).
+     * This represents server/DB concurrency capacity — NOT ticket stock.
+     * Oversell protection is handled separately by lockForUpdate in BookingController.
+     */
     protected function maxActive(): int
     {
         return max(1, (int) config('waitingroom.max_active', 20));
-    }
-
-    protected function admitRate(): int
-    {
-        return max(1, (int) config('waitingroom.admit_rate', 10));
     }
 
     protected function holdSeconds(): int
@@ -115,17 +115,18 @@ class WaitingRoomService
     }
 
     /**
-     * Move users from the front of the queue into active slots, bounded by
-     * concurrency (max_active) and rate (admit_rate per second).
+     * Move users from the front of the queue into any free active slots.
+     * Bounded only by max_active (server concurrency capacity).
+     * Oversell protection is the responsibility of BookingController (lockForUpdate).
      */
     protected function admit(int $eventId): void
     {
         Cache::lock("wr:lock:{$eventId}", 3)->get(function () use ($eventId) {
-            $now = $this->nowMs();
+            $now      = $this->nowMs();
             $queueKey = $this->queueKey($eventId);
             $activeKey = $this->activeKey($eventId);
 
-            // Drop expired slots.
+            // Drop expired slots first.
             Redis::zremrangebyscore($activeKey, '-inf', $now);
 
             $free = $this->maxActive() - (int) Redis::zcard($activeKey);
@@ -133,17 +134,7 @@ class WaitingRoomService
                 return;
             }
 
-            // Per-second rate cap.
-            $second = intdiv($now, 1000);
-            $rateKey = "wr:rate:{$eventId}:{$second}";
-            $used = (int) (Redis::get($rateKey) ?? 0);
-            $rateLeft = $this->admitRate() - $used;
-            if ($rateLeft <= 0) {
-                return;
-            }
-
-            $count = min($free, $rateLeft);
-            $front = Redis::zrange($queueKey, 0, $count - 1);
+            $front = Redis::zrange($queueKey, 0, $free - 1);
             if (empty($front)) {
                 return;
             }
@@ -153,9 +144,6 @@ class WaitingRoomService
                 Redis::zadd($activeKey, $expiry, $userId);
                 Redis::zrem($queueKey, $userId);
             }
-
-            Redis::incrby($rateKey, count($front));
-            Redis::expire($rateKey, 2);
         });
     }
 
@@ -182,11 +170,15 @@ class WaitingRoomService
         $position = (int) $rank + 1;
         $totalWaiting = (int) Redis::zcard($this->queueKey($eventId));
 
+        // Estimate: each batch of max_active users is admitted every hold_seconds.
+        // e.g. position 5, max_active 2, hold_seconds 120 → ceil(5/2) * 120 = 360 s
+        $batches = (int) ceil($position / $this->maxActive());
+
         return [
-            'status' => 'waiting',
-            'position' => $position,
-            'total_waiting' => $totalWaiting,
-            'estimate_seconds' => (int) ceil($position / $this->admitRate()),
+            'status'           => 'waiting',
+            'position'         => $position,
+            'total_waiting'    => $totalWaiting,
+            'estimate_seconds' => $batches * $this->holdSeconds(),
         ];
     }
 
