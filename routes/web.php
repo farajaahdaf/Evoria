@@ -251,7 +251,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/queue/{eventId}/leave', [\App\Http\Controllers\Api\WaitingRoomController::class, 'leave'])->name('queue.leave');
 
         Route::post('/book/{eventId}', [\App\Http\Controllers\AttendeeController::class, 'bookTicket'])->name('book');
+        Route::get('/checkout/{order}', [\App\Http\Controllers\AttendeeController::class, 'showCheckout'])->name('checkout');
         Route::post('/orders/{order}/refresh-status', [\App\Http\Controllers\AttendeeController::class, 'refreshOrderStatus'])->name('orders.refresh-status');
+        Route::post('/orders/{order}/cancel', [\App\Http\Controllers\AttendeeController::class, 'cancelOrder'])->name('orders.cancel');
     });
 
     Route::middleware('role:admin')->prefix('admin')->name('admin.')->group(function () {

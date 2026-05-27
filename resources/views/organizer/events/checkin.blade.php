@@ -264,7 +264,7 @@ function processQRResult(resultText) {
                     const reader = new FileReader();
                     reader.onload = function(event) {
                         const img = new Image();
-                        img.onload = function() {
+                        img.onload = async function() {
                             const canvas = document.createElement('canvas');
                             const context = canvas.getContext('2d');
                             canvas.width = img.width;
@@ -279,7 +279,11 @@ function processQRResult(resultText) {
                             if (code) {
                                 processQRResult(code.data);
                             } else {
-                                alert("QR Code tidak ditemukan pada gambar ini. Coba gambar yang lebih jelas.");
+                                await evModal.alert({
+                                    title: 'QR Code Tidak Ditemukan',
+                                    message: 'QR Code tidak ditemukan pada gambar ini. Coba gambar yang lebih jelas.',
+                                    icon: 'danger',
+                                });
                                 qrUpload.value = '';
                             }
                         }

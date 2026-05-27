@@ -40,6 +40,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/orders', [OrderController::class, 'index']);
         Route::get('/orders/{order}', [OrderController::class, 'show']);
         Route::post('/orders/{order}/sync', [OrderController::class, 'syncStatus']);
+        Route::post('/orders/{order}/cancel', [OrderController::class, 'cancelOrder']);
 
         // Chatbot AI
         Route::post('/chatbot', [ChatbotApiController::class, 'chat']);

@@ -1,59 +1,102 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Evoria — Event Ticketing Platform
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Aplikasi pembelian tiket event berbasis web (Laravel 11) dan mobile (Flutter).  
+Dilengkapi Virtual Waiting Room, integrasi pembayaran Midtrans, dan AI Chatbot.
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Prasyarat
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+| Kebutuhan | Versi minimum |
+|-----------|--------------|
+| PHP | 8.2+ |
+| Composer | 2.x |
+| Node.js | 18+ |
+| MySQL | 8.0+ |
+| Redis | 6.x+ |
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+> **macOS**: Install via Homebrew — `brew install php composer node mysql redis`  
+> **Windows**: Gunakan [Laragon](https://laragon.org) (sudah include PHP, MySQL, Redis)
 
-## Learning Laravel
+---
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+## Instalasi
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### 1. Clone & masuk folder
 
-## Laravel Sponsors
+```bash
+git clone https://github.com/farajaahdaf/Evoria.git
+cd Evoria
+```
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+### 2. Install dependencies
 
-### Premium Partners
+```bash
+composer install
+npm install
+```
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+> Untuk file `.env`, saya sudah kumpulkan di LMS untuk file env nya
 
-## Contributing
+### 5. Migrasi & isi data awal
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+```bash
+php artisan migrate --seed
+```
 
-## Code of Conduct
+### 6. Build asset frontend
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+```bash
+npm run build
+```
 
-## Security Vulnerabilities
+### 7. Buat symlink storage
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```bash
+php artisan storage:link
+```
 
-## License
+---
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+## Menjalankan Aplikasi
+
+Jalankan **3 perintah** di terminal terpisah:
+
+```bash
+# Terminal 1 — Redis
+redis-server
+
+# Terminal 2 — Laravel
+php artisan serve
+
+# Terminal 3 — Vite (hot reload CSS/JS)
+npm run dev
+```
+
+Akses di browser: **http://localhost:8000**
+
+---
+
+## Akun Demo
+
+Semua akun menggunakan password: **`password`**
+
+| Role | Email | Akses |
+|------|-------|-------|
+| Admin | `admin@example.com` | Dashboard admin — kelola semua event & user |
+| Organizer | `organizer@example.com` | Dashboard organizer — buat & kelola event |
+| Attendee | `attendee@example.com` | Beli tiket, lihat pesanan, chatbot |
+
+> Organizer tambahan: `harmony.stage@example.com`, `creative.hub@example.com`, `edu.summit@example.com`
+
+---
+
+## Fitur Utama
+
+- **Virtual Waiting Room** — antrian berbasis Redis, mencegah server collapse saat banyak user beli tiket serentak
+- **Pembayaran Midtrans** — Snap payment (sandbox), mendukung berbagai metode bayar
+- **AI Chatbot** — asisten event berbasis OpenAI GPT-4o-mini
+- **E-Ticket + QR Code** — tiket digital otomatis dikirim setelah pembayaran berhasil
+- **Google Maps** — lokasi event ditampilkan di halaman detail
+
+---

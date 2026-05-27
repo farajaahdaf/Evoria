@@ -19,5 +19,7 @@ return [
     // Safety net: cancel pending orders older than this and return their stock.
     // Covers users who got a slot, started checkout, but never paid (and where
     // Midtrans never delivered an expire notification).
-    'pending_timeout_minutes' => (int) env('BOOKING_PENDING_TIMEOUT_MINUTES', 30),
+    // Default 1440 menit (24 jam) agar sinkron dengan expiry Midtrans
+    // untuk metode pembayaran bank transfer (VA).
+    'pending_timeout_minutes' => (int) env('BOOKING_PENDING_TIMEOUT_MINUTES', 1440),
 ];

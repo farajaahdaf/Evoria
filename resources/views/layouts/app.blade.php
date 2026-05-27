@@ -50,5 +50,6 @@
             </main>
         </div>
         @stack('scripts')
+        <x-ev-modal />
     </body>
 </html>

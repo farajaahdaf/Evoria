@@ -44,18 +44,18 @@ class MidtransService
 
         $response = $this->snapRequest()->post('/snap/v1/transactions', [
             'transaction_details' => [
-                'order_id' => $order->order_number,
+                'order_id'     => $order->order_number,
                 'gross_amount' => (int) round((float) $order->total_amount),
             ],
-            'item_details' => $itemDetails,
+            'item_details'     => $itemDetails,
             'customer_details' => [
                 'first_name' => $order->user->name,
-                'email' => $order->user->email,
+                'email'      => $order->user->email,
             ],
             'callbacks' => [
-                'finish' => route('attendee.dashboard'),
+                'finish'   => route('attendee.dashboard'),
                 'unfinish' => route('attendee.dashboard'),
-                'error' => route('attendee.dashboard'),
+                'error'    => route('attendee.dashboard'),
             ],
         ]);
 
