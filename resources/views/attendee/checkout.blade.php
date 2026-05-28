@@ -172,7 +172,7 @@
                 embedId: 'snap-container',
                 onSuccess: async function () {
                     await syncOrder(orderId, csrf);
-                    window.location.href = '{{ route('attendee.dashboard') }}?payment=success';
+                    window.location.href = '{{ route('attendee.dashboard') }}?payment=success&order=' + orderId;
                 },
                 onPending: async function () {
                     _pending = true;

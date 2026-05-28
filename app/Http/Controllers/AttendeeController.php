@@ -6,7 +6,6 @@ use App\Jobs\GenerateETicketsJob;
 use App\Models\Order;
 use App\Models\Ticket;
 use App\Services\MidtransService;
-use App\Services\WaitingRoomService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
@@ -28,7 +27,7 @@ class AttendeeController extends Controller
 
         $order->load('orderItems.ticket.event');
 
-        $pendingMinutes = (int) config('waitingroom.pending_timeout_minutes', 30);
+        $pendingMinutes = (int) config('booking.pending_timeout_minutes', 1440);
 
         return view('attendee.checkout', [
             'order'                  => $order,
@@ -55,14 +54,8 @@ class AttendeeController extends Controller
         ]);
     }
 
-    public function bookTicket(Request $request, $eventId, MidtransService $midtrans, WaitingRoomService $waitingRoom)
+    public function bookTicket(Request $request, $eventId, MidtransService $midtrans)
     {
-        if (! $waitingRoom->isAdmitted((int) $eventId, $request->user()->id)) {
-            return response()->json([
-                'message' => 'Sesi antrian Anda belum aktif atau sudah berakhir. Silakan masuk antrian lagi.',
-            ], 423);
-        }
-
         $request->validate([
             'ticket_id' => ['required', 'exists:tickets,id'],
             'quantity' => ['required', 'integer', 'min:1', 'max:5'],
@@ -118,8 +111,6 @@ class AttendeeController extends Controller
 
                 GenerateETicketsJob::dispatchSync($order->id);
 
-                $waitingRoom->releaseSlot((int) $eventId, $request->user()->id);
-
                 return response()->json([
                     'message' => 'Tiket gratis berhasil dipesan.',
                     'order_number' => $order->order_number,
@@ -137,8 +128,6 @@ class AttendeeController extends Controller
             $order->update([
                 'snap_token' => $snapResponse['token'] ?? null,
             ]);
-
-            $waitingRoom->releaseSlot((int) $eventId, $request->user()->id);
 
             return response()->json([
                 'message'      => 'Transaksi berhasil dibuat.',
