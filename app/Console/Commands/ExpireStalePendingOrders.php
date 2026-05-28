@@ -14,7 +14,7 @@ class ExpireStalePendingOrders extends Command
 
     public function handle(): int
     {
-        $minutes = max(5, (int) config('waitingroom.pending_timeout_minutes', 30));
+        $minutes = max(5, (int) config('booking.pending_timeout_minutes', 1440));
         $cutoff = now()->subMinutes($minutes);
 
         $staleOrderIds = Order::query()

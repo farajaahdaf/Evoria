@@ -125,7 +125,8 @@
                             default => 'border-l-red-500',
                         };
                     @endphp
-                    <article class="bg-white rounded-2xl border border-slate-100 border-l-4 {{ $borderColor }} overflow-hidden shadow-sm hover:shadow-lg transition-shadow duration-300">
+                    <article id="order-{{ $order->id }}" data-order-id="{{ $order->id }}"
+                             class="order-card bg-white rounded-2xl border border-slate-100 border-l-4 {{ $borderColor }} overflow-hidden shadow-sm hover:shadow-lg transition-shadow duration-300">
                         <div class="flex flex-col lg:flex-row">
                             <div class="w-full lg:w-[280px] h-48 lg:h-auto bg-slate-200 relative">
                                 <img src="{{ $bannerUrl }}" alt="{{ $event->title ?? 'Banner Event' }}" class="w-full h-full object-cover">
@@ -177,19 +178,31 @@
                                             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                                                 @foreach($item->eTickets as $et)
                                                     <div class="bg-white border text-center rounded-xl p-4 flex flex-col items-center shadow-sm relative overflow-hidden">
-                                                        <div class="relative w-[150px] h-[150px] flex items-center justify-center bg-white p-2 rounded-lg border border-slate-100 mb-3">
+                                                        <button type="button"
+                                                                onclick="downloadQR(this, '{{ $et->ticket_code }}', {{ json_encode(($event->title ?? 'event') . ' - ' . ($item->ticket->name ?? 'ticket')) }})"
+                                                                class="qr-wrap group relative w-[150px] h-[150px] flex items-center justify-center bg-white p-2 rounded-lg border border-slate-100 mb-3
+                                                                       hover:border-primary hover:shadow-md transition cursor-pointer">
                                                             <div class="w-full h-full [&>svg]:w-full [&>svg]:h-full">
                                                                 {!! \SimpleSoftwareIO\QrCode\Facades\QrCode::format('svg')->size(150)->margin(0)->color(16, 54, 125)->generate($et->ticket_code) !!}
                                                             </div>
                                                             @if(isset($et->status) && $et->status === 'used')
-                                                                <div class="absolute inset-0 bg-white/80 flex items-center justify-center z-10">
+                                                                <div class="absolute inset-0 bg-white/80 flex items-center justify-center z-10 rounded-lg">
                                                                     <span class="bg-slate-800 text-white text-[10px] font-bold px-2 py-1 rounded rotate-[-15deg] whitespace-nowrap shadow-md">SUDAH DIGUNAKAN</span>
                                                                 </div>
                                                             @endif
-                                                        </div>
+                                                            {{-- Download overlay (hover) --}}
+                                                            <div class="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-opacity
+                                                                        flex flex-col items-center justify-center gap-1 rounded-lg z-20">
+                                                                <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                                          d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                                                                </svg>
+                                                                <span class="text-[11px] font-bold text-white uppercase tracking-wider">Simpan QR</span>
+                                                            </div>
+                                                        </button>
                                                         <p class="text-[11px] font-mono text-slate-500 mb-1">{{ $et->ticket_code }}</p>
                                                         <p class="text-sm font-bold text-slate-900 mb-2">{{ $item->ticket->name ?? 'Ticket' }}</p>
-                                                        
+
                                                         @php
                                                             $statusClass = 'bg-slate-100 text-slate-700';
                                                             $statusText = $et->status ?? 'active';
@@ -316,6 +329,126 @@
             }
         </script>
     @endif
+
+    {{-- ─── Download QR sebagai PNG ──────────────────────────────────── --}}
+    <script>
+        function downloadQR(btn, ticketCode, eventLabel) {
+            const svg = btn.querySelector('svg');
+            if (!svg) return;
+
+            const RESOLUTION = 600;
+            const svgData = new XMLSerializer().serializeToString(svg);
+            const blob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+
+            const img = new Image();
+            img.onload = function () {
+                const canvas = document.createElement('canvas');
+                canvas.width = RESOLUTION;
+                canvas.height = RESOLUTION;
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, RESOLUTION, RESOLUTION);
+                ctx.drawImage(img, 0, 0, RESOLUTION, RESOLUTION);
+                URL.revokeObjectURL(url);
+
+                canvas.toBlob(function (pngBlob) {
+                    const safeLabel = (eventLabel || 'ticket').replace(/[^\w\-]+/g, '_');
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(pngBlob);
+                    link.download = `${safeLabel}-${ticketCode}.png`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(link.href);
+                }, 'image/png');
+            };
+            img.onerror = function () {
+                URL.revokeObjectURL(url);
+                evModal.alert({
+                    title: 'Gagal Menyimpan QR',
+                    message: 'Tidak dapat memproses gambar. Silakan coba lagi.',
+                    icon: 'danger',
+                });
+            };
+            img.src = url;
+        }
+    </script>
+
+    {{-- ─── Success animation + scroll ke tiket baru ─────────────────── --}}
+    <div id="payment-success-overlay"
+         class="fixed inset-0 z-[10000] flex items-center justify-center pointer-events-none opacity-0 transition-opacity duration-500"
+         style="background:rgba(15,23,42,.55); backdrop-filter:blur(6px);">
+        <div class="bg-white rounded-3xl shadow-2xl px-10 py-8 flex flex-col items-center gap-3 max-w-sm">
+            <div class="success-check-wrap">
+                <svg class="success-check" viewBox="0 0 52 52">
+                    <circle class="success-check__circle" cx="26" cy="26" r="25" fill="none"/>
+                    <path class="success-check__check" fill="none" d="M14 27l7 7 16-16"/>
+                </svg>
+            </div>
+            <h3 class="text-xl font-black text-slate-900 mt-1">Pembayaran Berhasil!</h3>
+            <p class="text-sm text-slate-500 text-center">Tiket Anda siap. Mengarahkan ke daftar tiket...</p>
+        </div>
+    </div>
+
+    <style>
+        /* ─── Animated checkmark ─── */
+        .success-check-wrap { width: 96px; height: 96px; }
+        .success-check { width: 100%; height: 100%; border-radius: 50%; display: block;
+            stroke-width: 4; stroke: #22c55e; stroke-miterlimit: 10;
+            box-shadow: inset 0 0 0 #22c55e;
+            animation: checkFill .5s ease-in-out .4s forwards, checkScale .3s ease-in-out .9s both; }
+        .success-check__circle { stroke-dasharray: 166; stroke-dashoffset: 166;
+            stroke-width: 3; stroke-miterlimit: 10; stroke: #22c55e; fill: none;
+            animation: checkStroke .7s cubic-bezier(.65,0,.45,1) forwards; }
+        .success-check__check { transform-origin: 50% 50%; stroke-dasharray: 48; stroke-dashoffset: 48;
+            animation: checkStroke .4s cubic-bezier(.65,0,.45,1) .6s forwards; }
+        @keyframes checkStroke { to { stroke-dashoffset: 0; } }
+        @keyframes checkScale { 0%,100% { transform: none; } 50% { transform: scale3d(1.1,1.1,1); } }
+        @keyframes checkFill   { to { box-shadow: inset 0 0 0 50px #dcfce7; } }
+
+        /* ─── Highlight tiket baru ─── */
+        @keyframes orderHighlight {
+            0%   { box-shadow: 0 0 0 0 rgba(34, 197, 94, .55); transform: scale(1); }
+            50%  { box-shadow: 0 0 0 18px rgba(34, 197, 94, 0); transform: scale(1.01); }
+            100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);   transform: scale(1); }
+        }
+        .order-card.is-new {
+            animation: orderHighlight 1.8s ease-out 2 forwards;
+        }
+    </style>
+
+    <script>
+        (function () {
+            const params  = new URLSearchParams(window.location.search);
+            if (params.get('payment') !== 'success') return;
+
+            const orderId  = params.get('order');
+            const overlay  = document.getElementById('payment-success-overlay');
+
+            // Fade-in overlay
+            requestAnimationFrame(() => { overlay.style.opacity = '1'; });
+
+            // Setelah ~1.6s, fade overlay, scroll & highlight tiket baru
+            setTimeout(() => {
+                overlay.style.opacity = '0';
+                setTimeout(() => overlay.remove(), 500);
+
+                const target = orderId
+                    ? document.querySelector(`[data-order-id="${orderId}"]`)
+                    : document.querySelector('.order-card');
+
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    target.classList.add('is-new');
+                }
+
+                // Bersihkan URL biar tidak retrigger saat refresh
+                const cleanUrl = window.location.pathname;
+                window.history.replaceState({}, '', cleanUrl);
+            }, 1600);
+        })();
+    </script>
 
     <x-ev-modal />
 </body>

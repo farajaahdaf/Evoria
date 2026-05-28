@@ -7,7 +7,6 @@ use App\Jobs\GenerateETicketsJob;
 use App\Models\Order;
 use App\Models\Ticket;
 use App\Services\MidtransService;
-use App\Services\WaitingRoomService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -16,14 +15,8 @@ use RuntimeException;
 
 class BookingController extends Controller
 {
-    public function book(Request $request, int $eventId, MidtransService $midtrans, WaitingRoomService $waitingRoom): JsonResponse
+    public function book(Request $request, int $eventId, MidtransService $midtrans): JsonResponse
     {
-        if (! $waitingRoom->isAdmitted($eventId, $request->user()->id)) {
-            return response()->json([
-                'message' => 'Sesi antrian Anda belum aktif atau sudah berakhir. Silakan masuk antrian lagi.',
-            ], 423);
-        }
-
         $request->validate([
             'ticket_id' => ['required', 'exists:tickets,id'],
             'quantity'  => ['required', 'integer', 'min:1', 'max:5'],
@@ -76,8 +69,6 @@ class BookingController extends Controller
                 $order->update(['status' => 'paid', 'payment_method' => 'free']);
                 GenerateETicketsJob::dispatchSync($order->id);
 
-                $waitingRoom->releaseSlot($eventId, $request->user()->id);
-
                 return response()->json([
                     'message'      => 'Tiket gratis berhasil dipesan.',
                     'order_number' => $order->order_number,
@@ -95,18 +86,16 @@ class BookingController extends Controller
 
             $order->update(['snap_token' => $snapResponse['token'] ?? null]);
 
-            $waitingRoom->releaseSlot($eventId, $request->user()->id);
-
-            $pendingMinutes = (int) config('waitingroom.pending_timeout_minutes', 30);
+            $pendingMinutes = (int) config('booking.pending_timeout_minutes', 1440);
 
             return response()->json([
-                'message'            => 'Transaksi berhasil dibuat.',
-                'order_id'           => $order->id,
-                'order_number'       => $order->order_number,
-                'snap_token'         => $order->snap_token,
-                'redirect_url'       => $snapResponse['redirect_url'] ?? null,
-                'is_free'            => false,
-                'payment_expires_at' => now()->addMinutes($pendingMinutes)->toIso8601String(),
+                'message'                 => 'Transaksi berhasil dibuat.',
+                'order_id'                => $order->id,
+                'order_number'            => $order->order_number,
+                'snap_token'              => $order->snap_token,
+                'redirect_url'            => $snapResponse['redirect_url'] ?? null,
+                'is_free'                 => false,
+                'payment_expires_at'      => now()->addMinutes($pendingMinutes)->toIso8601String(),
                 'payment_timeout_minutes' => $pendingMinutes,
             ]);
         } catch (\Throwable $e) {
