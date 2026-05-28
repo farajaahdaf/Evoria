@@ -57,17 +57,19 @@ class ChatbotController extends Controller
             $reply = $this->generateAiEventAnswer($prompt, $filters, $events, $fallbackEvents, $totalMatches, $apiKey);
             $this->logChat($request, $prompt, $reply);
 
+            $this->logChat($request, $prompt, $reply);
+
+            // Kirim event cards ke mobile agar bisa di-tap langsung
+            $displayEvents = $events->isNotEmpty() ? $events : $fallbackEvents;
+
             return response()->json([
                 'response' => $reply,
-                // TEMP CHATBOT DEBUG: hapus debug_ai_filters setelah selesai inspect JSON filter dari OpenAI.
-                'debug_ai_filters' => [
-                    'raw_from_openai' => $aiFilters,
-                    'normalized' => $filters,
-                ],
+                'events'   => $this->buildEventCards($displayEvents),
             ]);
         } catch (\Throwable) {
             return response()->json([
                 'response' => 'Maaf, layanan AI sedang bermasalah. Coba lagi sebentar lagi.',
+                'events'   => [],
             ], 503);
         }
     }
@@ -409,6 +411,32 @@ fallback_events: " . json_encode($this->buildEventsPayload($fallbackEvents));
                     'price' => (float) $ticket->price,
                     'available_qty' => (int) $ticket->available_qty,
                 ])->values(),
+            ];
+        })->values()->all();
+    }
+
+    private function buildEventCards(Collection $events): array
+    {
+        return $events->map(function ($event) {
+            $availableTickets = $event->tickets->where('available_qty', '>', 0)->sortBy('price')->values();
+            $ticketsForPrice = $availableTickets->isNotEmpty() ? $availableTickets : $event->tickets->sortBy('price')->values();
+            $lowestTicket = $ticketsForPrice->first();
+
+            $bannerUrl = null;
+            if (filled($event->banner_path)) {
+                $bannerUrl = \Illuminate\Support\Str::startsWith($event->banner_path, ['http://', 'https://'])
+                    ? $event->banner_path
+                    : \Illuminate\Support\Facades\Storage::url(ltrim(preg_replace('#^/?storage/#', '', $event->banner_path), '/'));
+            }
+
+            return [
+                'id'           => $event->id,
+                'title'        => $event->title,
+                'date'         => optional($event->start_time)->translatedFormat('d M Y, H:i'),
+                'location'     => $event->location_name,
+                'lowest_price' => $lowestTicket ? (float) $lowestTicket->price : null,
+                'banner_url'   => $bannerUrl,
+                'category'     => $event->category?->name,
             ];
         })->values()->all();
     }
