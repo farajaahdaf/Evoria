@@ -264,6 +264,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Existing review routes
         Route::get('/organizers', [AdminController::class, 'verifyOrganizers'])->name('organizers');
         Route::get('/organizers/{id}', [AdminController::class, 'showOrganizer'])->name('organizers.show');
+        Route::get('/organizers/{id}/download-portfolio', [AdminController::class, 'downloadPortfolio'])->name('organizers.download-portfolio');
         Route::post('/organizers/{id}/verify', [AdminController::class, 'approveOrganizer'])->name('organizers.verify');
         Route::post('/organizers/{id}/reject', [AdminController::class, 'rejectOrganizer'])->name('organizers.reject');
         Route::get('/events', [AdminController::class, 'approveEvents'])->name('events');

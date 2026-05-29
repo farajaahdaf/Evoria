@@ -223,7 +223,7 @@
                                 </div>
                             </div>
                             @if($organizer->portfolio_path && Storage::disk('public')->exists($organizer->portfolio_path))
-                            <a href="{{ Storage::url($organizer->portfolio_path) }}" target="_blank" class="p-2 text-slate-400 hover:text-indigo-600 transition">
+                            <a href="{{ route('admin.organizers.download-portfolio', $organizer->id) }}" class="p-2 text-slate-400 hover:text-indigo-600 transition" title="Download Portfolio">
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
                             </a>
                             @else

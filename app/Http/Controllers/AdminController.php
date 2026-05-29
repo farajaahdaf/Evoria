@@ -8,6 +8,7 @@ use App\Models\OrderItem;
 use App\Models\OrganizerProfile;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class AdminController extends Controller
 {
@@ -206,6 +207,19 @@ class AdminController extends Controller
     {
         $organizer = OrganizerProfile::with(['user', 'latestPortfolioReview'])->findOrFail($id);
         return view('admin.organizer-detail', compact('organizer'));
+    }
+
+    public function downloadPortfolio($id)
+    {
+        $organizer = OrganizerProfile::findOrFail($id);
+
+        abort_if(! $organizer->portfolio_path, 404);
+        abort_if(! Storage::disk('public')->exists($organizer->portfolio_path), 404);
+
+        $filename = ($organizer->company_name ?? 'portfolio') . '_portfolio.docx';
+        $filename = preg_replace('/[^A-Za-z0-9_\-.]/', '_', $filename);
+
+        return Storage::disk('public')->download($organizer->portfolio_path, $filename);
     }
 
     public function approveOrganizer(Request $request, $id)
