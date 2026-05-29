@@ -436,6 +436,18 @@
                 </div>
             </div>
 
+            <!-- Contoh pertanyaan (tampil hanya saat belum ada chat) -->
+            <div x-show="messages.length === 0 && !loading" class="space-y-2 pt-1">
+                <!-- <p class="text-xs font-bold text-slate-400 uppercase tracking-wider pl-10">Contoh pertanyaan:</p> -->
+                <template x-for="(s, i) in suggestions" :key="i">
+                    <button @click="askSuggestion(s)"
+                            class="w-full text-left flex items-center gap-3 bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 hover:border-primary/40 hover:bg-primary/5 hover:text-primary transition-all duration-150 shadow-sm group">
+                        <span class="material-symbols-outlined text-primary text-base shrink-0 group-hover:scale-110 transition-transform">send</span>
+                        <span x-text="s"></span>
+                    </button>
+                </template>
+            </div>
+
             <template x-for="(message, idx) in messages" :key="idx">
                 <div :class="message.role === 'user' ? 'flex justify-end' : 'flex gap-2'">
                     <template x-if="message.role === 'assistant'">
@@ -494,6 +506,13 @@
                 newMessage: '',
                 loading: false,
                 loadingMsg: '🔍 Sedang mencarikan event untukmu...',
+                suggestions: [
+                    'Ada konser di Jakarta?',
+                    'Berikan saya event konser yang murah',
+                    'Berikan event workshop teknologi',
+                    'Event gratis di Bandung?',
+                    'Seminar apa yang ada minggu ini?',
+                ],
                 _loadingMsgs: [
                     '🤖 Tunggu ya, kita lagi siapkan jawabannya...',
                     '📅 Mengecek event yang tersedia...',
@@ -514,6 +533,11 @@
                     clearInterval(this._loadingInterval);
                     this._loadingInterval = null;
                     this.loadingMsg = this._loadingMsgs[0];
+                },
+
+                askSuggestion(text) {
+                    this.newMessage = text;
+                    this.sendMessage();
                 },
 
                 async sendMessage() {
