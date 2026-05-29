@@ -226,7 +226,31 @@ class EventController extends Controller
         if ($event->organizer_id !== auth()->id()) {
             abort(403);
         }
-        return view('organizer.events.checkin', compact('event'));
+
+        $initialScanHistory = \App\Models\ETicket::with(['orderItem.ticket', 'orderItem.order.user'])
+            ->where('status', 'used')
+            ->whereNotNull('used_at')
+            ->whereHas('orderItem.ticket', function ($query) use ($event) {
+                $query->where('event_id', $event->id);
+            })
+            ->latest('used_at')
+            ->limit(8)
+            ->get()
+            ->map(function ($eTicket) {
+                return [
+                    'id' => 'used-' . $eTicket->id,
+                    'type' => 'checked_in',
+                    'label' => 'Checked In',
+                    'name' => $eTicket->orderItem->order->user->name ?? 'Unknown attendee',
+                    'ticket' => $eTicket->orderItem->ticket->name ?? 'No ticket detail',
+                    'code' => $eTicket->ticket_code,
+                    'message' => 'Previously checked in',
+                    'time' => $eTicket->used_at->format('H:i:s'),
+                ];
+            })
+            ->values();
+
+        return view('organizer.events.checkin', compact('event', 'initialScanHistory'));
     }
 
     public function checkin(Request $request, Event $event)
@@ -244,23 +268,41 @@ class EventController extends Controller
             ->first();
 
         if (!$eTicket) {
-            return response()->json(['success' => false, 'message' => 'Ticket code not found']);
+            return response()->json([
+                'success' => false,
+                'status_type' => 'failed',
+                'message' => 'Ticket code not found',
+            ]);
         }
 
         if ($eTicket->orderItem->ticket->event_id !== $event->id) {
-            return response()->json(['success' => false, 'message' => 'This ticket is for a different event']);
+            return response()->json([
+                'success' => false,
+                'status_type' => 'failed',
+                'message' => 'This ticket is for a different event',
+            ]);
         }
 
         if ($eTicket->status !== 'active') {
+            $isAlreadyUsed = $eTicket->status === 'used';
+
             return response()->json([
-                'success' => false, 
-                'message' => 'Ticket is ' . $eTicket->status . ' (Check-in time: ' . ($eTicket->used_at ? $eTicket->used_at->format('d M Y H:i:s') : '-') . ')'
+                'success' => false,
+                'status_type' => $isAlreadyUsed ? 'already_used' : 'failed',
+                'message' => $isAlreadyUsed ? 'Ticket already checked in' : 'Ticket is ' . $eTicket->status,
+                'buyer_name' => $eTicket->orderItem->order->user->name,
+                'ticket_name' => $eTicket->orderItem->ticket->name,
+                'checkin_time' => $eTicket->used_at ? $eTicket->used_at->format('d M Y H:i:s') : null,
             ]);
         }
 
         // Validate if order is paid (just in case)
         if ($eTicket->orderItem->order->status !== 'paid') {
-            return response()->json(['success' => false, 'message' => 'Order for this ticket is not fully paid.']);
+            return response()->json([
+                'success' => false,
+                'status_type' => 'failed',
+                'message' => 'Order for this ticket is not fully paid.',
+            ]);
         }
 
         $eTicket->update([
@@ -270,6 +312,7 @@ class EventController extends Controller
 
         return response()->json([
             'success' => true,
+            'status_type' => 'checked_in',
             'buyer_name' => $eTicket->orderItem->order->user->name,
             'ticket_name' => $eTicket->orderItem->ticket->name,
             'checkin_time' => $eTicket->used_at->format('d M Y H:i:s')
