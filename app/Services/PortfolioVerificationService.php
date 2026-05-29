@@ -97,8 +97,33 @@ class PortfolioVerificationService
         return trim(preg_replace('/[ \t]+/', ' ', preg_replace('/\n+/', "\n", $text)));
     }
 
+    private function isUnmodifiedTemplate(string $text): bool
+    {
+        // Unique "Contoh:" examples that only exist in the blank template
+        $markers = [
+            'Jakarta Jazz Night 2026',
+            'Istora Senayan',
+            'PT Maju Bersama',
+            'Komunitas Jazz Jakarta',
+            'Direktur / Ketua Komunitas / Event Manager',
+        ];
+
+        $found = array_filter($markers, fn ($m) => mb_stripos($text, $m) !== false);
+
+        return count($found) >= 2;
+    }
+
     private function score(string $text, OrganizerProfile $organizer): array
     {
+        if ($this->isUnmodifiedTemplate($text)) {
+            return [
+                'score'      => 0,
+                'risk_level' => 'Incomplete',
+                'breakdown'  => $this->emptyBreakdown(),
+                'findings'   => ['Template tidak diisi.'],
+            ];
+        }
+
         $sections = $this->sections($text);
         $findings = [];
 
@@ -197,6 +222,8 @@ class PortfolioVerificationService
     private function scoreProfile(string $section, array &$findings): array
     {
         $description = $this->fieldValue($section, 'Deskripsi Organisasi', ['Visi & Misi', 'Visi']);
+        // Strip template placeholder instruction block if user left it in
+        $description = trim(preg_replace('/Jelaskan\b.+?Minimal\s+\d+\s+kata\.?\s*/isu', '', $description));
         $wordCount = str_word_count(strip_tags($description));
         $score = 0;
 
@@ -266,7 +293,7 @@ class PortfolioVerificationService
             $findings[] = 'Event Experience: no valid track record entries found.';
         }
 
-        $consistencyScore = 4;
+        $consistencyScore = ($claimedEvents > 0 || $validTrackRecords > 0) ? 4 : 0;
         if ($claimedEvents > 0 && $validTrackRecords > 0 && $claimedEvents >= 10 && $validTrackRecords < 3) {
             $consistencyScore -= 2;
             $findings[] = "Fraud risk indicator: organizer claims {$claimedEvents} past events but provides only {$validTrackRecords} valid track record entries.";
@@ -365,9 +392,15 @@ class PortfolioVerificationService
             return false;
         }
 
+        // Reject emoji-only or symbol-only values (e.g. "✍️" leaked from section headers)
+        if (! preg_match('/[\p{L}\p{N}]/u', $value)) {
+            return false;
+        }
+
         $invalid = [
             'pt / cv / yayasan / komunitas / perorangan',
             'konser / seminar / festival / olahraga / pameran / lainnya',
+            'konser / seminar / festival / olahraga / dll',
             'jalan, nomor, rt/rw, kelurahan, kecamatan',
             'url profil media sosial lainnya',
             'sesuai ktp',
