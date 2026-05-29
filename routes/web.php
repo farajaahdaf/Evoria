@@ -1,11 +1,22 @@
 <?php
 
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Redis;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\OrganizerController;
 use App\Http\Controllers\OrganizerApplicationController;
 use App\Http\Controllers\Organizer\EventController;
 use Illuminate\Support\Facades\Route;
+
+Route::get('/health', function () {
+    try {
+        DB::connection()->getPdo();
+        return response()->json(['status' => 'ok', 'db' => 'ok'], 200);
+    } catch (\Throwable $e) {
+        return response()->json(['status' => 'down', 'error' => $e->getMessage()], 503);
+    }
+});
 
 Route::get('/', function (Illuminate\Http\Request $request) {
     $search = trim((string) $request->query('q', ''));
@@ -233,8 +244,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::middleware('role:attendee')->prefix('attendee')->name('attendee.')->group(function () {
         Route::get('/dashboard', [\App\Http\Controllers\AttendeeController::class, 'dashboard'])->name('dashboard');
+
         Route::post('/book/{eventId}', [\App\Http\Controllers\AttendeeController::class, 'bookTicket'])->name('book');
+        Route::get('/checkout/{order}', [\App\Http\Controllers\AttendeeController::class, 'showCheckout'])->name('checkout');
         Route::post('/orders/{order}/refresh-status', [\App\Http\Controllers\AttendeeController::class, 'refreshOrderStatus'])->name('orders.refresh-status');
+        Route::post('/orders/{order}/cancel', [\App\Http\Controllers\AttendeeController::class, 'cancelOrder'])->name('orders.cancel');
     });
 
     Route::middleware('role:admin')->prefix('admin')->name('admin.')->group(function () {
@@ -245,7 +259,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/all-organizers', [AdminController::class, 'allOrganizers'])->name('organizers.all');
         Route::get('/all-events', [AdminController::class, 'allEvents'])->name('events.all');
         Route::get('/draft-events', [AdminController::class, 'draftEvents'])->name('events.drafts');
-        Route::get('/transactions/overview', [AdminController::class, 'transactionsOverview'])->name('transactions.overview');
         Route::get('/transactions', [AdminController::class, 'transactions'])->name('transactions');
 
         // Existing review routes

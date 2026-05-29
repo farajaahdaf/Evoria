@@ -22,12 +22,18 @@
                         <p class="text-xs font-black text-blue-200 uppercase tracking-[0.25em]">Moderation Center</p>
                         <h3 class="text-4xl font-extrabold text-white tracking-tight">Admin Overview</h3>
                         <p class="text-gray-300 text-lg leading-relaxed">
-                            Saat ini ada {{ $pendingOrganizers }} organizer pending, {{ $pendingEvents }} event menunggu review, {{ $draftEvents }} event draft, dan {{ $pendingTransactionsCount }} transaksi pending. Prioritaskan antrean yang masih membutuhkan keputusan admin.
+                            There are currently {{ $pendingOrganizers }} pending organizers, {{ $pendingEvents }} events awaiting review, {{ $draftEvents }} draft events, and {{ $pendingTransactionsCount }} pending transactions. Prioritize queues that still need an admin decision.
                         </p>
-                        <div class="flex space-x-4 pt-4">
-                            <a href="{{ route('admin.organizers') }}" class="px-6 py-3 bg-white text-gray-900 font-bold rounded-xl hover:bg-gray-100 transition-all shadow-lg">Review Organizers</a>
-                            <a href="{{ route('admin.events') }}" class="px-6 py-3 bg-gray-800 text-white font-bold rounded-xl border border-gray-700 hover:bg-gray-700 transition-all shadow-lg">Review Events</a>
-                        </div>
+                        @if($pendingOrganizers > 0 || $pendingEvents > 0)
+                            <div class="flex flex-wrap gap-4 pt-4">
+                                @if($pendingOrganizers > 0)
+                                    <a href="{{ route('admin.organizers.all', ['status' => 'pending']) }}" class="px-6 py-3 bg-white text-gray-900 font-bold rounded-xl hover:bg-gray-100 transition-all shadow-lg">Review Organizers</a>
+                                @endif
+                                @if($pendingEvents > 0)
+                                    <a href="{{ route('admin.events.all', ['status' => 'pending_review']) }}" class="px-6 py-3 bg-gray-800 text-white font-bold rounded-xl border border-gray-700 hover:bg-gray-700 transition-all shadow-lg">Review Events</a>
+                                @endif
+                            </div>
+                        @endif
                     </div>
                     <div class="hidden md:flex pr-10 opacity-90 items-center justify-center">
                         <img src="{{ asset('images/logo.png') }}" alt="Evoria" class="w-56 h-auto object-contain drop-shadow-[0_18px_40px_rgba(15,23,42,0.25)]">
@@ -36,45 +42,45 @@
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <a href="{{ route('admin.users') }}" class="block bg-white rounded-3xl p-6 shadow-sm border border-gray-100 relative overflow-hidden group transition hover:-translate-y-1 hover:shadow-md">
+                <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 relative overflow-hidden">
                     <div class="flex justify-between items-start mb-4">
-                        <div class="p-3 bg-gray-50 rounded-2xl text-gray-900 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300">
+                        <div class="p-3 bg-gray-50 rounded-2xl text-gray-900">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
                         </div>
                     </div>
                     <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Attendee</p>
                     <h4 class="text-3xl font-black text-gray-900">{{ number_format($totalAttendees) }}</h4>
-                </a>
+                </div>
 
-                <a href="{{ route('admin.organizers.all') }}" class="block bg-white rounded-3xl p-6 shadow-sm border border-gray-100 relative overflow-hidden group transition hover:-translate-y-1 hover:shadow-md">
+                <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 relative overflow-hidden">
                     <div class="flex justify-between items-start mb-4">
-                        <div class="p-3 bg-gray-50 rounded-2xl text-gray-900 group-hover:bg-purple-600 group-hover:text-white transition-all duration-300">
+                        <div class="p-3 bg-gray-50 rounded-2xl text-gray-900">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
                         </div>
                     </div>
                     <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Organizer</p>
                     <h4 class="text-3xl font-black text-gray-900">{{ number_format($totalOrganizers) }}</h4>
-                </a>
+                </div>
 
-                <a href="{{ route('admin.events.all') }}" class="block bg-white rounded-3xl p-6 shadow-sm border border-gray-100 relative overflow-hidden group transition hover:-translate-y-1 hover:shadow-md">
+                <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 relative overflow-hidden">
                     <div class="flex justify-between items-start mb-4">
-                        <div class="p-3 bg-gray-50 rounded-2xl text-gray-900 group-hover:bg-green-600 group-hover:text-white transition-all duration-300">
+                        <div class="p-3 bg-gray-50 rounded-2xl text-gray-900">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                         </div>
                     </div>
                     <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Total Event</p>
                     <h4 class="text-3xl font-black text-gray-900">{{ number_format($totalEvents) }}</h4>
-                </a>
+                </div>
 
-                <a href="{{ route('admin.transactions') }}" class="block bg-white rounded-3xl p-6 shadow-sm border border-gray-100 relative overflow-hidden group transition hover:-translate-y-1 hover:shadow-md">
+                <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 relative overflow-hidden">
                     <div class="flex justify-between items-start mb-4">
-                        <div class="p-3 bg-gray-50 rounded-2xl text-gray-900 group-hover:bg-yellow-500 group-hover:text-white transition-all duration-300">
+                        <div class="p-3 bg-gray-50 rounded-2xl text-gray-900">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                         </div>
                     </div>
-                    <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Transaksi</p>
+                    <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Transactions</p>
                     <h4 class="text-3xl font-black text-gray-900">{{ number_format($totalTransactions) }}</h4>
-                </a>
+                </div>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -82,7 +88,7 @@
                     <div class="space-y-6">
                         <div class="flex justify-between items-center">
                             <h4 class="text-2xl font-black text-gray-900 tracking-tight">Pending Organizers</h4>
-                            <a href="{{ route('admin.organizers') }}" class="text-sm font-bold text-gray-500 hover:text-blue-600 transition-colors">View All Applications</a>
+                            <a href="{{ route('admin.organizers.all', ['status' => 'pending']) }}" class="text-sm font-bold text-gray-500 hover:text-blue-600 transition-colors">View All</a>
                         </div>
 
                         <div class="space-y-4">
@@ -113,7 +119,7 @@
                     <div class="space-y-6">
                         <div class="flex justify-between items-center">
                             <h4 class="text-2xl font-black text-gray-900 tracking-tight">Pending Events</h4>
-                            <a href="{{ route('admin.events') }}" class="text-sm font-bold text-gray-500 hover:text-blue-600 transition-colors">View All Events</a>
+                            <a href="{{ route('admin.events.all', ['status' => 'pending_review']) }}" class="text-sm font-bold text-gray-500 hover:text-blue-600 transition-colors">View All</a>
                         </div>
 
                         <div class="space-y-4">
@@ -144,7 +150,7 @@
                                             </p>
                                         </div>
                                         <div class="flex items-center justify-end pt-6 border-t border-gray-50 mt-6">
-                                            <a href="{{ route('admin.events.show', $event->slug) }}" class="px-6 py-2.5 bg-gray-900 text-white text-sm font-extrabold rounded-xl hover:bg-gray-800 transition-all shadow-lg">View Details</a>
+                                            <a href="{{ route('admin.events.show', $event->slug) }}" class="px-6 py-2.5 bg-gray-900 text-white text-sm font-extrabold rounded-xl hover:bg-gray-800 transition-all shadow-lg">Review</a>
                                         </div>
                                     </div>
                                 </div>
@@ -162,7 +168,7 @@
                                 <h4 class="text-2xl font-black text-gray-900 tracking-tight">Draft Events</h4>
                                 <span class="px-3 py-1 bg-slate-100 text-slate-600 text-[10px] font-black uppercase tracking-widest rounded-full border border-slate-200">{{ $draftEvents }}</span>
                             </div>
-                            <a href="{{ route('admin.events.drafts') }}" class="text-sm font-bold text-gray-500 hover:text-blue-600 transition-colors">View All Drafts</a>
+                            <a href="{{ route('admin.events.all', ['status' => 'draft']) }}" class="text-sm font-bold text-gray-500 hover:text-blue-600 transition-colors">View All</a>
                         </div>
 
                         <div class="space-y-4">
@@ -216,15 +222,14 @@
                             <div class="p-3 bg-purple-50 rounded-2xl text-purple-600">
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
                             </div>
-                            <h4 class="text-2xl font-black text-gray-900 tracking-tight">Status Transaksi</h4>
+                            <h4 class="text-2xl font-black text-gray-900 tracking-tight">Transaction Status</h4>
                         </div>
 
                         <div class="space-y-6">
                             <div>
-                                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Pending Transaksi</p>
+                                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Pending Transactions</p>
                                 <div class="flex items-baseline justify-between">
                                     <h5 class="text-4xl font-black text-gray-900">{{ $pendingTransactionsCount }}</h5>
-                                    <a href="{{ route('admin.transactions.overview') }}" class="text-xs font-bold text-purple-600 hover:underline">View Details</a>
                                 </div>
                                 <div class="mt-4 h-2 w-full bg-gray-100 rounded-full overflow-hidden">
                                     <div class="h-full bg-purple-600 rounded-full" style="width: {{ $pendingTransactionsCount > 0 ? min(($pendingTransactionsCount / max($totalTransactions, 1)) * 100, 100) : 0 }}%"></div>
@@ -252,7 +257,7 @@
 
                         <a href="{{ route('admin.transactions') }}" class="w-full py-4 bg-gray-50 text-gray-900 font-extrabold rounded-2xl flex items-center justify-center space-x-2 hover:bg-gray-100 transition-all border border-gray-100 group">
                             <svg class="w-4 h-4 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
-                            <span>Manage All Transactions</span>
+                            <span>Manage Transactions</span>
                         </a>
                     </div>
                 </div>

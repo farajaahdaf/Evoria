@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\OrganizerProfile;
 use App\Models\User;
+use App\Services\PortfolioVerificationService;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -71,8 +72,7 @@ class RegisteredUserController extends Controller
             'description' => ['nullable', 'string', 'max:2000'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
-            'portfolio' => ['nullable', 'file', 'mimes:pdf,jpeg,png,jpg', 'max:5120'],
-            'proposal' => ['nullable', 'file', 'mimes:pdf', 'max:10240'],
+            'portfolio' => ['nullable', 'file', 'mimes:docx,pdf,jpeg,png,jpg', 'max:5120'],
         ]);
 
         $portfolioPath = null;
@@ -80,12 +80,7 @@ class RegisteredUserController extends Controller
             $portfolioPath = $request->file('portfolio')->store('organizers/portfolios', 'public');
         }
 
-        $proposalPath = null;
-        if ($request->hasFile('proposal')) {
-            $proposalPath = $request->file('proposal')->store('organizers/proposals', 'public');
-        }
-
-        $user = DB::transaction(function () use ($request, $portfolioPath, $proposalPath) {
+        $user = DB::transaction(function () use ($request, $portfolioPath) {
             $user = User::create([
                 'name' => $request->name,
                 'email' => $request->email,
@@ -93,14 +88,17 @@ class RegisteredUserController extends Controller
                 'role' => 'organizer',
             ]);
 
-            OrganizerProfile::create([
+            $profile = OrganizerProfile::create([
                 'user_id' => $user->id,
                 'company_name' => $request->company_name,
                 'description' => $request->description,
                 'portfolio_path' => $portfolioPath,
-                'proposal_path' => $proposalPath,
                 'status' => 'pending',
             ]);
+
+            if ($portfolioPath) {
+                app(PortfolioVerificationService::class)->analyze($profile->load('user'));
+            }
 
             return $user;
         });

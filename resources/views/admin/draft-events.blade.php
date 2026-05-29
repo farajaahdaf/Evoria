@@ -9,44 +9,43 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
             <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
                 <div class="flex items-center justify-between mb-6">
-                    <h3 class="text-xl font-bold text-gray-800">Semua Event Draft</h3>
-                    <a href="{{ route('admin.dashboard') }}" class="text-indigo-600 hover:underline">← Kembali ke Dashboard</a>
+                    <h3 class="text-xl font-bold text-gray-800">All Draft Events</h3>
                 </div>
 
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse">
                         <thead>
                             <tr class="bg-gray-50 border-b">
-                                <th class="p-4 text-sm font-semibold text-gray-600 uppercase tracking-wider">Info Event</th>
+                                <th class="p-4 text-sm font-semibold text-gray-600 uppercase tracking-wider">Event Info</th>
                                 <th class="p-4 text-sm font-semibold text-gray-600 uppercase tracking-wider">Organizer</th>
                                 <th class="p-4 text-sm font-semibold text-gray-600 uppercase tracking-wider text-right">Status</th>
-                                <th class="p-4 text-sm font-semibold text-gray-600 uppercase tracking-wider text-right">Jadwal</th>
+                                <th class="p-4 text-sm font-semibold text-gray-600 uppercase tracking-wider text-right">Schedule</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100">
                             @forelse($events as $event)
-                            <tr class="hover:bg-gray-50 transition">
-                                <td class="p-4">
-                                    <div class="text-gray-900 font-bold border-b border-dashed pb-1 mb-1">{{ $event->title }}</div>
-                                    <div class="text-sm text-gray-600 mt-1"><span class="font-semibold">Lok:</span> {{ $event->location_name }}</div>
-                                </td>
-                                <td class="p-4 text-gray-700">
-                                    {{ $event->organizer->name }}
-                                </td>
-                                <td class="p-4 text-right">
-                                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-700">
-                                        Draft
-                                    </span>
-                                </td>
-                                <td class="p-4 text-right text-gray-600 text-sm">
-                                    <div>{{ $event->start_time->format('d M Y, H:i') }}</div>
-                                    <a href="{{ route('admin.events.show', $event->slug) }}" class="mt-2 inline-flex text-xs font-bold text-indigo-600 hover:text-indigo-800">Lihat detail</a>
-                                </td>
-                            </tr>
+                                <tr class="hover:bg-gray-50 transition">
+                                    <td class="p-4">
+                                        <div class="text-gray-900 font-bold border-b border-dashed pb-1 mb-1">{{ $event->title }}</div>
+                                        <div class="text-sm text-gray-600 mt-1"><span class="font-semibold">Location:</span> {{ $event->location_name }}</div>
+                                    </td>
+                                    <td class="p-4 text-gray-700">
+                                        {{ $event->organizer->name }}
+                                    </td>
+                                    <td class="p-4 text-right">
+                                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-700">
+                                            Draft
+                                        </span>
+                                    </td>
+                                    <td class="p-4 text-right text-gray-600 text-sm">
+                                        <div>{{ $event->start_time->format('d M Y, H:i') }}</div>
+                                        <a href="{{ route('admin.events.show', $event->slug) }}" class="mt-2 inline-flex text-xs font-bold text-indigo-600 hover:text-indigo-800">View details</a>
+                                    </td>
+                                </tr>
                             @empty
-                            <tr>
-                                <td colspan="4" class="p-8 text-center text-gray-500 italic">Belum ada event dengan status draft.</td>
-                            </tr>
+                                <tr>
+                                    <td colspan="4" class="p-8 text-center text-gray-500 italic">No draft events found.</td>
+                                </tr>
                             @endforelse
                         </tbody>
                     </table>

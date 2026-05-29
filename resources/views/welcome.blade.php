@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ config('app.name', 'Evoria') }} - Beranda</title>
+    <link rel="icon" type="image/png" href="{{ asset('images/favicon-icon.png') }}">
 
     <!-- Fonts & Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
@@ -392,7 +393,7 @@
     <!-- Chatbot FAB -->
     <div class="fixed bottom-8 right-8 z-[60] fab-container">
         <div class="fab-tooltip absolute top-1/2 left-0 -translate-y-1/2 opacity-0 pointer-events-none transition-all duration-300 ease-out whitespace-nowrap bg-slate-900 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-xl">
-            Tanya Evoria AI
+            Males cari event? Tanya aja ke Evoria AI!
         </div>
         <button @click="chatbotOpen = !chatbotOpen" class="size-16 bg-gradient-to-tr from-primary to-[#4F46E5] text-white rounded-[24px] flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-all duration-200 group relative">
             <span x-show="!chatbotOpen" class="material-symbols-outlined text-3xl transition-transform group-hover:rotate-12">smart_toy</span>
@@ -402,7 +403,16 @@
     </div>
 
     <!-- AI Chatbot Popover Panel -->
-    <div x-cloak x-show="chatbotOpen" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-8 scale-95" x-transition:enter-end="opacity-100 translate-y-0 scale-100" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 scale-100" x-transition:leave-end="opacity-0 translate-y-8 scale-95" class="fixed bottom-28 right-8 w-[380px] h-[550px] bg-white rounded-[24px] shadow-2xl border border-slate-100 flex flex-col z-[55] overflow-hidden" x-data="chatBox()">
+    <div x-cloak x-show="chatbotOpen"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 translate-y-8 scale-95"
+         x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+         x-transition:leave-end="opacity-0 translate-y-8 scale-95"
+         class="fixed bottom-28 right-8 w-[380px] h-[550px] bg-white rounded-[24px] shadow-2xl border border-slate-100 flex flex-col z-[55] overflow-hidden"
+         x-data="chatBox()">
+
         <!-- Header -->
         <div class="bg-gradient-to-r from-primary to-[#4F46E5] p-5 text-white flex items-center gap-3">
             <div class="size-10 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center">
@@ -426,30 +436,49 @@
                 </div>
             </div>
 
-            <template x-for="message in messages">
+            <!-- Contoh pertanyaan (tampil hanya saat belum ada chat) -->
+            <div x-show="messages.length === 0 && !loading" class="space-y-2 pt-1">
+                <!-- <p class="text-xs font-bold text-slate-400 uppercase tracking-wider pl-10">Contoh pertanyaan:</p> -->
+                <template x-for="(s, i) in suggestions" :key="i">
+                    <button @click="askSuggestion(s)"
+                            class="w-full text-left flex items-center gap-3 bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 hover:border-primary/40 hover:bg-primary/5 hover:text-primary transition-all duration-150 shadow-sm group">
+                        <span class="material-symbols-outlined text-primary text-base shrink-0 group-hover:scale-110 transition-transform">send</span>
+                        <span x-text="s"></span>
+                    </button>
+                </template>
+            </div>
+
+            <template x-for="(message, idx) in messages" :key="idx">
                 <div :class="message.role === 'user' ? 'flex justify-end' : 'flex gap-2'">
-                    <!-- Avatar for Bot -->
                     <template x-if="message.role === 'assistant'">
                         <div class="size-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                             <span class="material-symbols-outlined text-primary text-sm">smart_toy</span>
                         </div>
                     </template>
-
-                    <div :class="message.role === 'user' ? 'bg-primary text-white rounded-tr-sm' : 'bg-white border border-slate-100 text-slate-700 rounded-tl-sm prose prose-sm max-w-none prose-a:text-primary prose-a:font-bold prose-strong:text-slate-900'"
-                         class="rounded-2xl px-4 py-3 max-w-[85%] shadow-sm text-sm" x-html="formatMessage(message.content)">
+                    <div :class="message.role === 'user'
+                            ? 'bg-primary text-white rounded-tr-sm'
+                            : 'bg-white border border-slate-100 text-slate-700 rounded-tl-sm prose prose-sm max-w-none prose-a:text-primary prose-a:font-bold prose-strong:text-slate-900'"
+                         class="rounded-2xl px-4 py-3 max-w-[85%] shadow-sm text-sm"
+                         x-html="formatMessage(message.content)">
                     </div>
                 </div>
             </template>
 
             <!-- Loading Indicator -->
-            <div class="flex gap-2" x-show="loading">
-                <div class="size-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+            <div class="flex gap-2" x-show="loading"
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="opacity-0 translate-y-2"
+                 x-transition:enter-end="opacity-100 translate-y-0">
+                <div class="size-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-1">
                     <span class="material-symbols-outlined text-primary text-sm">smart_toy</span>
                 </div>
-                <div class="bg-white border border-slate-100 text-slate-700 rounded-2xl rounded-tl-sm px-4 py-4 max-w-[85%] shadow-sm flex items-center gap-1.5 h-10">
-                    <div class="size-1.5 bg-slate-400 rounded-full animate-bounce"></div>
-                    <div class="size-1.5 bg-slate-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
-                    <div class="size-1.5 bg-slate-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+                <div class="bg-white border border-slate-100 rounded-2xl rounded-tl-sm px-4 py-3 max-w-[85%] shadow-sm">
+                    <p class="text-sm text-slate-500 italic" x-text="loadingMsg"></p>
+                    <div class="flex gap-1 mt-1.5">
+                        <div class="size-1.5 bg-primary/40 rounded-full animate-bounce"></div>
+                        <div class="size-1.5 bg-primary/40 rounded-full animate-bounce" style="animation-delay: 0.15s"></div>
+                        <div class="size-1.5 bg-primary/40 rounded-full animate-bounce" style="animation-delay: 0.3s"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -457,8 +486,12 @@
         <!-- Input Area -->
         <div class="p-4 border-t border-slate-100 bg-white">
             <form @submit.prevent="sendMessage" class="relative">
-                <input type="text" x-model="newMessage" placeholder="Ketik pencarian Anda..." class="w-full h-12 bg-slate-100 border-none rounded-full pl-5 pr-14 focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm text-slate-700 placeholder:text-slate-400">
-                <button type="submit" :disabled="loading || !newMessage.trim()" class="absolute right-1 top-1 size-10 bg-primary text-white rounded-full flex items-center justify-center hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:bg-slate-300">
+                <input type="text" x-model="newMessage"
+                       placeholder="Ketik pencarian Anda..."
+                       class="w-full h-12 bg-slate-100 border-none rounded-full pl-5 pr-14 focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm text-slate-700 placeholder:text-slate-400">
+                <button type="submit"
+                        :disabled="loading || !newMessage.trim()"
+                        class="absolute right-1 top-1 size-10 bg-primary text-white rounded-full flex items-center justify-center hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:bg-slate-300">
                     <span class="material-symbols-outlined text-[20px] ml-0.5">send</span>
                 </button>
             </form>
@@ -472,6 +505,40 @@
                 messages: [],
                 newMessage: '',
                 loading: false,
+                loadingMsg: '🔍 Sedang mencarikan event untukmu...',
+                suggestions: [
+                    'Ada konser di Jakarta?',
+                    'Berikan saya event konser yang murah',
+                    'Berikan event workshop teknologi',
+                    'Event gratis di Bandung?',
+                    'Seminar apa yang ada minggu ini?',
+                ],
+                _loadingMsgs: [
+                    '🤖 Tunggu ya, kita lagi siapkan jawabannya...',
+                    '📅 Mengecek event yang tersedia...',
+                    '✨ Hampir selesai, sebentar ya!',
+                ],
+                _loadingInterval: null,
+
+                startLoadingMsg() {
+                    let i = 0;
+                    this.loadingMsg = this._loadingMsgs[0];
+                    this._loadingInterval = setInterval(() => {
+                        i = (i + 1) % this._loadingMsgs.length;
+                        this.loadingMsg = this._loadingMsgs[i];
+                    }, 2500);
+                },
+
+                stopLoadingMsg() {
+                    clearInterval(this._loadingInterval);
+                    this._loadingInterval = null;
+                    this.loadingMsg = this._loadingMsgs[0];
+                },
+
+                askSuggestion(text) {
+                    this.newMessage = text;
+                    this.sendMessage();
+                },
 
                 async sendMessage() {
                     if (!this.newMessage.trim() || this.loading) return;
@@ -481,6 +548,7 @@
                     let prompt = this.newMessage;
                     this.newMessage = '';
                     this.loading = true;
+                    this.startLoadingMsg();
 
                     this.scrollToBottom();
 
@@ -505,6 +573,7 @@
                         this.messages.push({ role: 'assistant', content: "Momen sibuk, koneksi AI terputus. Coba lagi." });
                     } finally {
                         this.loading = false;
+                        this.stopLoadingMsg();
                         this.scrollToBottom();
                     }
                 },

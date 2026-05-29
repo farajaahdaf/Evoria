@@ -1,4 +1,10 @@
 <x-app-layout>
+    @php
+        $portfolioReview = $organizer->latestPortfolioReview;
+        $reviewBreakdown = $portfolioReview?->breakdown ?? [];
+        $reviewFindings = $portfolioReview?->findings ?? [];
+    @endphp
+
     <div class="min-h-screen bg-[#ebebeb] py-8 px-4 sm:px-6 lg:px-8">
         <div class="max-w-7xl mx-auto">
             <!-- Breadcrumbs -->
@@ -10,7 +16,7 @@
                     <li>
                         <div class="flex items-center">
                             <svg class="w-4 h-4 text-slate-300" fill="currentColor" viewBox="0 0 20 20"><path d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"></path></svg>
-                            <a href="{{ route('admin.organizers') }}" class="ml-1 md:ml-2 hover:text-indigo-600 transition">APPLICATIONS</a>
+                            <a href="{{ route('admin.organizers.all', ['status' => 'pending']) }}" class="ml-1 md:ml-2 hover:text-indigo-600 transition">APPLICATIONS</a>
                         </div>
                     </li>
                     <li aria-current="page">
@@ -35,7 +41,7 @@
                 <div class="flex flex-wrap gap-4">
                     @if($organizer->status === 'pending')
                     <div class="flex gap-4">
-                        <button type="button" x-data="" x-on:click.prevent="$dispatch('open-modal', 'confirm-rejection')" class="inline-flex items-center px-8 py-4 bg-white border border-red-200 text-red-600 rounded-xl font-bold hover:bg-red-50 transition shadow-sm transform hover:-translate-y-0.5">
+                        <button type="button" onclick="window.dispatchEvent(new CustomEvent('open-modal', { detail: 'confirm-rejection' }))" class="inline-flex items-center px-8 py-4 bg-white border border-red-200 text-red-600 rounded-xl font-bold hover:bg-red-50 transition shadow-sm transform hover:-translate-y-0.5">
                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                             Reject
                         </button>
@@ -81,18 +87,58 @@
                             </div>
                         </div>
 
-                        <!-- Compliance Score Dynamic -->
-                        <div class="bg-slate-50 rounded-2xl p-6 flex items-center justify-between border-b-4 {{ $organizer->compliance_score >= 80 ? 'border-indigo-600' : ($organizer->compliance_score >= 50 ? 'border-yellow-500' : 'border-red-500') }}">
-                            <div class="flex items-center">
+                        <div class="bg-slate-50 rounded-2xl p-6 border-b-4 {{ $organizer->compliance_score >= 80 ? 'border-indigo-600' : ($organizer->compliance_score >= 50 ? 'border-yellow-500' : 'border-red-500') }}">
+                            <div class="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+                                <div class="flex items-center">
                                 <div class="w-12 h-12 {{ $organizer->compliance_score >= 80 ? 'bg-indigo-100' : ($organizer->compliance_score >= 50 ? 'bg-yellow-100' : 'bg-red-100') }} rounded-lg flex items-center justify-center mr-4">
                                     <svg class="w-6 h-6 {{ $organizer->compliance_score >= 80 ? 'text-indigo-600' : ($organizer->compliance_score >= 50 ? 'text-yellow-600' : 'text-red-600') }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
                                 </div>
                                 <div>
-                                    <h4 class="font-bold text-slate-800">Evoria Compliance Score</h4>
-                                    <p class="text-sm text-slate-500">Automated diagnostic {{ $organizer->compliance_accuracy }}% accuracy</p>
+                                    <h4 class="font-bold text-slate-800">Portfolio Verification Score</h4>
+                                    <p class="text-sm text-slate-500">
+                                        {{ $portfolioReview ? ($portfolioReview->risk_level . ' • Template v' . $portfolioReview->template_version) : 'No automated portfolio analysis yet.' }}
+                                    </p>
                                 </div>
+                                </div>
+                                <div class="text-3xl font-black {{ $organizer->compliance_score >= 80 ? 'text-indigo-600' : ($organizer->compliance_score >= 50 ? 'text-yellow-600' : 'text-red-600') }}">{{ $organizer->compliance_score }}%</div>
                             </div>
-                            <div class="text-3xl font-black {{ $organizer->compliance_score >= 80 ? 'text-indigo-600' : ($organizer->compliance_score >= 50 ? 'text-yellow-600' : 'text-red-600') }}">{{ $organizer->compliance_score }}%</div>
+
+                            @if($portfolioReview)
+                                <div class="mt-6 grid grid-cols-1 gap-3 md:grid-cols-2">
+                                    @foreach($reviewBreakdown as $item)
+                                        <div class="rounded-xl bg-white p-4 border border-slate-100">
+                                            <div class="flex items-center justify-between gap-4">
+                                                <span class="text-xs font-black uppercase tracking-widest text-slate-400">{{ $item['label'] ?? 'Section' }}</span>
+                                                <span class="text-sm font-black text-slate-800">{{ $item['score'] ?? 0 }}/{{ $item['max_score'] ?? 0 }}</span>
+                                            </div>
+                                            <div class="mt-3 h-2 overflow-hidden rounded-full bg-slate-100">
+                                                <div class="h-full rounded-full bg-indigo-600" style="width: {{ (($item['max_score'] ?? 0) > 0) ? min((($item['score'] ?? 0) / ($item['max_score'] ?? 1)) * 100, 100) : 0 }}%"></div>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+
+                                @if(count($reviewFindings) > 0)
+                                    <div class="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-5" x-data="{ expanded: false }">
+                                        <h5 class="text-xs font-black uppercase tracking-widest text-amber-700">Verification Findings</h5>
+                                        <ul class="mt-3 space-y-2 text-sm font-semibold text-amber-800">
+                                            @foreach($reviewFindings as $index => $finding)
+                                                <li @if($index >= 6) x-show="expanded" x-cloak @endif>{{ $finding }}</li>
+                                            @endforeach
+                                        </ul>
+                                        @if(count($reviewFindings) > 6)
+                                            <button
+                                                type="button"
+                                                @click="expanded = !expanded"
+                                                class="mt-4 text-sm font-black text-amber-700 transition hover:text-amber-900"
+                                            >
+                                                <span x-show="!expanded">View More</span>
+                                                <span x-show="expanded" x-cloak>Show Less</span>
+                                            </button>
+                                        @endif
+                                    </div>
+                                @endif
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -160,7 +206,6 @@
                 <div id="documents" class="bg-white rounded-3xl p-8 shadow-sm border border-slate-100">
                     <div class="flex items-center justify-between mb-10">
                         <h3 class="text-xs font-bold tracking-widest text-indigo-500 uppercase">Verification Documents</h3>
-                        <a href="#" class="text-xs font-bold text-indigo-600 hover:text-indigo-800 transition">Upload Missing</a>
                     </div>
 
                     <div class="space-y-4">
@@ -171,9 +216,9 @@
                                     <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4"></path></svg>
                                 </div>
                                 <div>
-                                    <h5 class="font-bold text-slate-800">Company_Portfolio.pdf</h5>
+                                    <h5 class="font-bold text-slate-800">Portfolio - {{ $organizer->company_name }}</h5>
                                     @if($organizer->portfolio_path && Storage::disk('public')->exists($organizer->portfolio_path))
-                                        <p class="text-xs text-slate-400 font-medium">{{ round(Storage::disk('public')->size($organizer->portfolio_path) / 1024 / 1024, 1) }} MB • {{ $organizer->updated_at->diffForHumans() }}</p>
+                                        <p class="text-xs text-slate-400 font-medium">{{ strtoupper(pathinfo($organizer->portfolio_path, PATHINFO_EXTENSION)) }} • {{ round(Storage::disk('public')->size($organizer->portfolio_path) / 1024 / 1024, 1) }} MB • {{ $organizer->updated_at->diffForHumans() }}</p>
                                     @endif
                                 </div>
                             </div>
@@ -186,27 +231,6 @@
                             @endif
                         </div>
 
-                        <!-- Proposal Card -->
-                        <div class="flex items-center justify-between p-5 bg-slate-50 rounded-2xl border border-transparent hover:border-indigo-100 transition group">
-                            <div class="flex items-center">
-                                <div class="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center mr-4 group-hover:bg-blue-100 transition">
-                                    <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                                </div>
-                                <div>
-                                    <h5 class="font-bold text-slate-800">Registration_Proposal.pdf</h5>
-                                    @if($organizer->proposal_path && Storage::disk('public')->exists($organizer->proposal_path))
-                                        <p class="text-xs text-slate-400 font-medium">{{ round(Storage::disk('public')->size($organizer->proposal_path) / 1024 / 1024, 1) }} MB • {{ $organizer->updated_at->diffForHumans() }}</p>
-                                    @endif
-                                </div>
-                            </div>
-                            @if($organizer->proposal_path && Storage::disk('public')->exists($organizer->proposal_path))
-                            <a href="{{ Storage::url($organizer->proposal_path) }}" target="_blank" class="p-2 text-slate-400 hover:text-indigo-600 transition">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                            </a>
-                            @else
-                            <span class="text-xs font-bold text-red-400 italic">Missing</span>
-                            @endif
-                        </div>
                     </div>
                 </div>
             </div>

@@ -94,9 +94,11 @@
                             @endif
 
                             <form action="{{ route('organizer.events.destroy', $event->id) }}" method="POST"
-                                  onsubmit="return confirm('Hapus event \'{{ addslashes($event->title) }}\'? Tindakan ini tidak dapat dibatalkan.')">
+                                  class="delete-event-form" data-title="{{ addslashes($event->title) }}">
                                 @csrf @method('DELETE')
-                                <button type="submit" class="px-3 py-2 bg-red-50 text-red-600 font-medium rounded hover:bg-red-100 transition text-sm">
+                                <button type="button"
+                                        onclick="confirmDeleteEvent(this)"
+                                        class="px-3 py-2 bg-red-50 text-red-600 font-medium rounded hover:bg-red-100 transition text-sm">
                                     Hapus
                                 </button>
                             </form>
@@ -124,3 +126,20 @@
         </div>
     </div>
 </x-app-layout>
+
+@push('scripts')
+<script>
+    async function confirmDeleteEvent(btn) {
+        const form  = btn.closest('form');
+        const title = form.dataset.title || 'event ini';
+        const ok = await evModal.confirm({
+            title: 'Hapus Event?',
+            message: `"${title}" akan dihapus secara permanen dan tidak dapat dikembalikan.`,
+            confirmText: 'Ya, Hapus',
+            cancelText: 'Batal',
+            danger: true,
+        });
+        if (ok) form.submit();
+    }
+</script>
+@endpush

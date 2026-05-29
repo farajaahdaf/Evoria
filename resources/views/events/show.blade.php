@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ $event->title }} - Evoria</title>
+    <link rel="icon" type="image/png" href="{{ asset('images/favicon-icon.png') }}">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
@@ -28,9 +29,10 @@
     </script>
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        [x-cloak] { display: none !important; }
     </style>
 </head>
-<body class="antialiased bg-[#ebebeb] text-gray-900 font-sans" x-data="{ bookingModal: false, selectedTicket: null }">
+<body class="antialiased bg-[#ebebeb] text-gray-900 font-sans" x-data="bookingFlow()">
     @php
         $bannerUrl = 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80';
 
@@ -170,7 +172,7 @@
                     <div class="p-6 space-y-4">
                         @foreach($event->tickets as $ticket)
                             <div class="border rounded-xl p-4 {{ $ticket->available_qty > 0 ? 'border-gray-200 hover:border-blue-500 transition cursor-pointer' : 'border-gray-200 bg-gray-50 opacity-60' }}"
-                                 @if($ticket->available_qty > 0) @click="selectedTicket = {id: {{ $ticket->id }}, name: '{{ $ticket->name }}', price: {{ $ticket->price }}}; bookingModal = true;" @endif>
+                                 @if($ticket->available_qty > 0) @click="selectTicket({id: {{ $ticket->id }}, name: @js($ticket->name), price: {{ $ticket->price }}})" @endif>
                                 <div class="flex justify-between items-center mb-2">
                                     <h4 class="font-bold text-lg text-gray-900">{{ $ticket->name }}</h4>
                                     <span class="font-bold text-blue-600">
@@ -199,12 +201,12 @@
         x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
         x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
         
-        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden" @click.away="bookingModal = false" x-show="bookingModal"
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden" @click.away="closeBooking()" x-show="bookingModal"
             x-transition:enter="transition ease-out duration-300 transform" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0">
             
             <div class="bg-gray-50 p-6 border-b flex justify-between items-center">
                 <h3 class="text-xl font-bold text-gray-900">Checkout Simulation</h3>
-                <button @click="bookingModal = false" class="text-gray-400 hover:text-gray-600">&times;</button>
+                <button @click="closeBooking()" class="text-gray-400 hover:text-gray-600">&times;</button>
             </div>
 
             <form
@@ -265,6 +267,30 @@
         ></script>
     @endif
     <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('bookingFlow', () => ({
+                bookingModal: false,
+                selectedTicket: null,
+
+                eventId: {{ $event->id }},
+                isAttendee: {{ (auth()->check() && auth()->user()->role === 'attendee') ? 'true' : 'false' }},
+                loginUrl: @js(route('login')),
+
+                selectTicket(ticket) {
+                    this.selectedTicket = ticket;
+                    if (!this.isAttendee) {
+                        window.location.href = this.loginUrl;
+                        return;
+                    }
+                    this.bookingModal = true;
+                },
+
+                closeBooking() {
+                    this.bookingModal = false;
+                },
+            }));
+        });
+
         @if($googleMapsWebApiKey && $event->latitude && $event->longitude)
         document.addEventListener('DOMContentLoaded', function () {
             const initMap = () => {
@@ -311,7 +337,11 @@
             const originalLabel = submitButton ? submitButton.textContent : '';
 
             if (!window.snap && {{ $midtransEnabled ? 'true' : 'false' }}) {
-                alert('Snap.js Midtrans belum termuat.');
+                await evModal.alert({
+                    title: 'Pembayaran Tidak Tersedia',
+                    message: 'Snap.js Midtrans belum termuat. Coba muat ulang halaman.',
+                    icon: 'danger',
+                });
                 return false;
             }
 
@@ -341,25 +371,14 @@
                     return false;
                 }
 
-                window.snap.pay(payload.snap_token, {
-                    onSuccess: async function () {
-                        await syncOrderStatus(payload.order_id);
-                        window.location.href = "{{ route('attendee.dashboard') }}";
-                    },
-                    onPending: async function () {
-                        await syncOrderStatus(payload.order_id);
-                        window.location.href = "{{ route('attendee.dashboard') }}";
-                    },
-                    onError: function () {
-                        alert('Pembayaran gagal diproses. Silakan coba lagi.');
-                    },
-                    onClose: async function () {
-                        await syncOrderStatus(payload.order_id);
-                        window.location.href = "{{ route('attendee.dashboard') }}";
-                    }
-                });
+                // Redirect ke halaman checkout khusus (embedded Snap)
+                window.location.href = payload.checkout_url;
             } catch (error) {
-                alert(error.message || 'Terjadi kesalahan saat memulai pembayaran.');
+                await evModal.alert({
+                    title: 'Pembayaran Gagal',
+                    message: error.message || 'Terjadi kesalahan saat memulai pembayaran.',
+                    icon: 'danger',
+                });
             } finally {
                 if (submitButton) {
                     submitButton.disabled = false;
@@ -372,7 +391,6 @@
 
         async function syncOrderStatus(orderId) {
             if (!orderId) return;
-
             try {
                 await fetch(`/attendee/orders/${orderId}/refresh-status`, {
                     method: 'POST',
@@ -386,6 +404,23 @@
                 console.warn('Gagal sinkronisasi status order:', error);
             }
         }
+
+        async function cancelOrder(orderId) {
+            if (!orderId) return;
+            try {
+                await fetch(`/attendee/orders/${orderId}/cancel`, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content
+                            || document.querySelector('input[name="_token"]')?.value,
+                    },
+                });
+            } catch (error) {
+                console.warn('Gagal membatalkan order:', error);
+            }
+        }
     </script>
+    <x-ev-modal />
 </body>
 </html>

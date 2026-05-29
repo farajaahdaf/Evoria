@@ -9,21 +9,26 @@
         'organizer' => 'Organizer',
         default => 'User',
     };
+    $logoRoute = match($role) {
+        'admin' => route('admin.dashboard'),
+        'organizer' => route('organizer.dashboard'),
+        default => route('home'),
+    };
 @endphp
 
 <header class="bg-white border-b border-gray-200" x-data="{ menuOpen: false }">
     <div class="max-w-[1400px] mx-auto px-6 h-[80px] flex items-center justify-between gap-6">
         <div class="flex items-center gap-8">
-            <a href="{{ route('home') }}" class="flex items-center gap-1 shrink-0">
+            <a href="{{ $logoRoute }}" class="flex items-center gap-1 shrink-0">
                 <x-application-logo class="h-10 w-auto" />
             </a>
 
             <nav class="hidden lg:flex items-center gap-6">
                 @if($role === 'admin')
                     <a class="text-[14px] font-bold hover:text-primary transition-colors {{ request()->routeIs('admin.users') ? 'text-primary' : 'text-slate-900' }}" href="{{ route('admin.users') }}">Attendee</a>
-                    <a class="text-[14px] font-bold hover:text-primary transition-colors {{ request()->routeIs('admin.organizers.all') ? 'text-primary' : 'text-slate-900' }}" href="{{ route('admin.organizers.all') }}">Organizer</a>
-                    <a class="text-[14px] font-bold hover:text-primary transition-colors {{ request()->routeIs('admin.events.all') || request()->routeIs('admin.events.show') ? 'text-primary' : 'text-slate-900' }}" href="{{ route('admin.events.all') }}">Events</a>
-                    <a class="text-[14px] font-bold hover:text-primary transition-colors {{ request()->routeIs('admin.transactions') ? 'text-primary' : 'text-slate-900' }}" href="{{ route('admin.transactions') }}">Transaksi</a>
+                    <a class="text-[14px] font-bold hover:text-primary transition-colors {{ request()->routeIs('admin.organizers') || request()->routeIs('admin.organizers.*') ? 'text-primary' : 'text-slate-900' }}" href="{{ route('admin.organizers.all') }}">Organizer</a>
+                    <a class="text-[14px] font-bold hover:text-primary transition-colors {{ request()->routeIs('admin.events') || request()->routeIs('admin.events.*') ? 'text-primary' : 'text-slate-900' }}" href="{{ route('admin.events.all') }}">Events</a>
+                    <a class="text-[14px] font-bold hover:text-primary transition-colors {{ request()->routeIs('admin.transactions') ? 'text-primary' : 'text-slate-900' }}" href="{{ route('admin.transactions') }}">Transactions</a>
                 @elseif($role === 'organizer')
                     <a class="text-[14px] font-bold hover:text-primary transition-colors {{ request()->routeIs('organizer.balance') ? 'text-primary' : 'text-slate-900' }}" href="{{ route('organizer.balance') }}">Saldo</a>
                     <a class="text-[14px] font-bold hover:text-primary transition-colors {{ request()->routeIs('organizer.events.index') ? 'text-primary' : 'text-slate-900' }}" href="{{ route('organizer.events.index') }}">Event Saya</a>
@@ -32,9 +37,13 @@
             </nav>
         </div>
 
-        <div class="flex-1 max-w-[500px] hidden md:block">
-            <x-event-search :initial-value="request('q', '')" />
-        </div>
+        @if($role !== 'admin')
+            <div class="flex-1 max-w-[500px] hidden md:block">
+                <x-event-search :initial-value="request('q', '')" />
+            </div>
+        @else
+            <div class="flex-1 hidden md:block"></div>
+        @endif
 
         <div class="relative flex items-center gap-3">
             <img src="{{ $avatarUrl }}" alt="Avatar {{ $user->name }}" class="w-11 h-11 rounded-full object-cover border-2 border-white shadow-sm">
@@ -66,19 +75,6 @@
                 x-transition:leave-end="opacity-0 -translate-y-1 scale-95"
                 class="absolute right-0 top-14 w-56 bg-white border border-slate-200 rounded-xl shadow-lg py-2 z-50"
             >
-                @if($role === 'admin')
-                    <a href="{{ route('admin.dashboard') }}" class="block px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:text-primary transition-colors">Dashboard</a>
-                    <a href="{{ route('admin.users') }}" class="block px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:text-primary transition-colors">Attendee Terdaftar</a>
-                    <a href="{{ route('admin.organizers.all') }}" class="block px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:text-primary transition-colors">Organizer Terdaftar</a>
-                    <a href="{{ route('admin.events.all') }}" class="block px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:text-primary transition-colors">Total Event</a>
-                    <a href="{{ route('admin.transactions') }}" class="block px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:text-primary transition-colors">Riwayat Transaksi</a>
-                    <div class="my-1 border-t border-slate-100"></div>
-                @elseif($role === 'organizer')
-                    <a href="{{ route('organizer.balance') }}" class="block px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:text-primary transition-colors">Saldo</a>
-                    <a href="{{ route('organizer.events.index') }}" class="block px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:text-primary transition-colors">Event Saya</a>
-                    <a href="{{ route('organizer.events.create') }}" class="block px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:text-primary transition-colors">Buat Event</a>
-                    <div class="my-1 border-t border-slate-100"></div>
-                @endif
                 <a href="{{ route('profile.edit') }}" class="block px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:text-primary transition-colors">Profile</a>
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf

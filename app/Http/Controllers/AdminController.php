@@ -4,10 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Event;
 use App\Models\Order;
+use App\Models\OrderItem;
 use App\Models\OrganizerProfile;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class AdminController extends Controller
 {
@@ -20,11 +20,7 @@ class AdminController extends Controller
         $totalTransactions = Order::count();
         $pendingTransactionsCount = Order::where('status', 'pending')->count();
         $paidTransactionsCount = Order::where('status', 'paid')->count();
-        $failedTransactionsCount = Order::whereIn('status', ['failed', 'cancelled', 'refunded'])->count();
-        $transactionStats = Order::select('status', DB::raw('count(*) as count'))
-            ->groupBy('status')
-            ->get();
-
+        $failedTransactionsCount = Order::whereIn('status', ['failed', 'cancelled'])->count();
         $pendingOrganizers = OrganizerProfile::where('status', 'pending')->count();
         $pendingOrganizersList = OrganizerProfile::with('user')
             ->where('status', 'pending')
@@ -54,7 +50,6 @@ class AdminController extends Controller
             'pendingTransactionsCount',
             'paidTransactionsCount',
             'failedTransactionsCount',
-            'transactionStats',
             'pendingOrganizers',
             'pendingOrganizersList',
             'pendingEvents',
@@ -64,70 +59,152 @@ class AdminController extends Controller
         ));
     }
 
-    public function users()
+    public function users(Request $request)
     {
-        $users = User::where('role', 'attendee')->latest()->paginate(10);
-        return view('admin.users', compact('users'));
+        $sort = $request->query('sort', 'newest');
+        $sorts = ['newest', 'oldest'];
+
+        if (! in_array($sort, $sorts, true)) {
+            $sort = 'newest';
+        }
+
+        $users = User::where('role', 'attendee')
+            ->withCount('orders')
+            ->withSum([
+                'orders as total_spent' => fn ($query) => $query->where('status', 'paid'),
+            ], 'total_amount')
+            ->addSelect([
+                'paid_tickets_count' => OrderItem::query()
+                    ->selectRaw('COALESCE(SUM(order_items.quantity), 0)')
+                    ->join('orders', 'orders.id', '=', 'order_items.order_id')
+                    ->whereColumn('orders.user_id', 'users.id')
+                    ->where('orders.status', 'paid'),
+            ])
+            ->orderBy('created_at', $sort === 'oldest' ? 'asc' : 'desc')
+            ->paginate(10)
+            ->appends(['sort' => $sort]);
+
+        return view('admin.users', compact('users', 'sort'));
     }
 
-    public function allOrganizers()
+    public function allOrganizers(Request $request)
     {
+        $statuses = ['all', 'verified', 'pending', 'rejected'];
+        $status = $request->query('status', 'verified');
+
+        if (! in_array($status, $statuses, true)) {
+            $status = 'verified';
+        }
+
+        $sort = $request->query('sort', $status === 'pending' ? 'oldest' : 'newest');
+        $sorts = ['newest', 'oldest'];
+
+        if (! in_array($sort, $sorts, true)) {
+            $sort = $status === 'pending' ? 'oldest' : 'newest';
+        }
+
         $organizers = OrganizerProfile::with('user')
-            ->where('status', 'verified')
-            ->latest()
-            ->paginate(10);
+            ->when($status !== 'all', fn ($query) => $query->where('status', $status))
+            ->orderBy('created_at', $sort === 'oldest' ? 'asc' : 'desc')
+            ->paginate(10)
+            ->appends(['status' => $status, 'sort' => $sort]);
 
-        return view('admin.all-organizers', compact('organizers'));
+        $statusCounts = [
+            'all' => OrganizerProfile::count(),
+            'verified' => OrganizerProfile::where('status', 'verified')->count(),
+            'pending' => OrganizerProfile::where('status', 'pending')->count(),
+            'rejected' => OrganizerProfile::where('status', 'rejected')->count(),
+        ];
+
+        return view('admin.all-organizers', compact('organizers', 'status', 'statusCounts', 'sort'));
     }
 
-    public function allEvents()
+    public function allEvents(Request $request)
     {
-        $events = Event::with('organizer')->latest()->paginate(10);
-        return view('admin.all-events', compact('events'));
+        $statuses = ['all', 'pending_review', 'draft', 'published', 'rejected'];
+        $status = $request->query('status', 'all');
+
+        if (! in_array($status, $statuses, true)) {
+            $status = 'all';
+        }
+
+        $sort = $request->query('sort', 'newest_submission');
+        $sorts = ['newest_submission', 'oldest_submission', 'event_soonest', 'event_latest'];
+
+        if (! in_array($sort, $sorts, true)) {
+            $sort = 'newest_submission';
+        }
+
+        $events = Event::with('organizer')
+            ->when($status !== 'all', fn ($query) => $query->where('status', $status))
+            ->when($sort === 'newest_submission', fn ($query) => $query->orderByDesc('created_at'))
+            ->when($sort === 'oldest_submission', fn ($query) => $query->orderBy('created_at'))
+            ->when($sort === 'event_soonest', fn ($query) => $query->orderBy('start_time'))
+            ->when($sort === 'event_latest', fn ($query) => $query->orderByDesc('start_time'))
+            ->paginate(10)
+            ->appends(['status' => $status, 'sort' => $sort]);
+
+        $statusCounts = [
+            'all' => Event::count(),
+            'pending_review' => Event::where('status', 'pending_review')->count(),
+            'draft' => Event::where('status', 'draft')->count(),
+            'published' => Event::where('status', 'published')->count(),
+            'rejected' => Event::where('status', 'rejected')->count(),
+        ];
+
+        return view('admin.all-events', compact('events', 'status', 'statusCounts', 'sort'));
     }
 
     public function draftEvents()
     {
-        $events = Event::with('organizer')
-            ->where('status', 'draft')
-            ->latest()
-            ->paginate(10);
-
-        return view('admin.draft-events', compact('events'));
+        return redirect()->route('admin.events.all', ['status' => 'draft']);
     }
 
-    public function transactionsOverview()
+    public function transactions(Request $request)
     {
-        $pendingTransactionsCount = Order::where('status', 'pending')->count();
-        $paidTransactionsCount = Order::where('status', 'paid')->count();
-        $failedTransactionsCount = Order::whereIn('status', ['failed', 'cancelled', 'refunded'])->count();
-        $totalTransactions = Order::count();
-        $latestOrders = Order::with('user')->latest()->take(6)->get();
+        $status = $request->query('status', 'all');
+        $statuses = ['all', 'pending', 'paid', 'issues'];
 
-        return view('admin.transactions-overview', compact(
-            'pendingTransactionsCount',
-            'paidTransactionsCount',
-            'failedTransactionsCount',
-            'totalTransactions',
-            'latestOrders'
-        ));
-    }
+        if (! in_array($status, $statuses, true)) {
+            $status = 'all';
+        }
 
-    public function transactions()
-    {
-        $orders = Order::with(['user', 'orderItems.ticket.event'])->latest()->paginate(10);
-        return view('admin.transactions', compact('orders'));
+        $sort = $request->query('sort', 'newest');
+        $sorts = ['newest', 'oldest', 'amount_high', 'amount_low'];
+
+        if (! in_array($sort, $sorts, true)) {
+            $sort = 'newest';
+        }
+
+        $orders = Order::with(['user', 'orderItems.ticket.event'])
+            ->when($status === 'pending', fn ($query) => $query->where('status', 'pending'))
+            ->when($status === 'paid', fn ($query) => $query->where('status', 'paid'))
+            ->when($status === 'issues', fn ($query) => $query->whereIn('status', ['failed', 'cancelled']))
+            ->when($sort === 'newest', fn ($query) => $query->orderByDesc('created_at'))
+            ->when($sort === 'oldest', fn ($query) => $query->orderBy('created_at'))
+            ->when($sort === 'amount_high', fn ($query) => $query->orderByDesc('total_amount'))
+            ->when($sort === 'amount_low', fn ($query) => $query->orderBy('total_amount'))
+            ->paginate(10)
+            ->appends(['status' => $status, 'sort' => $sort]);
+
+        $statusCounts = [
+            'all' => Order::count(),
+            'pending' => Order::where('status', 'pending')->count(),
+            'paid' => Order::where('status', 'paid')->count(),
+            'issues' => Order::whereIn('status', ['failed', 'cancelled'])->count(),
+        ];
+
+        return view('admin.transactions', compact('orders', 'status', 'statusCounts', 'sort'));
     }
 
     public function verifyOrganizers()
     {
-        $organizers = OrganizerProfile::with('user')->where('status', 'pending')->get();
-        return view('admin.organizers', compact('organizers'));
+        return redirect()->route('admin.organizers.all', ['status' => 'pending']);
     }
 
     public function showOrganizer($id)
     {
-        $organizer = OrganizerProfile::with('user')->findOrFail($id);
+        $organizer = OrganizerProfile::with(['user', 'latestPortfolioReview'])->findOrFail($id);
         return view('admin.organizer-detail', compact('organizer'));
     }
 
@@ -137,7 +214,9 @@ class AdminController extends Controller
         $profile->update(['status' => 'verified']);
         $profile->user?->update(['role' => 'organizer']);
 
-        return redirect()->route('admin.organizers')->with('success', 'Organizer verified successfully.');
+        return redirect()
+            ->route('admin.organizers.all', ['status' => 'pending'])
+            ->with('success', 'Organizer verified successfully.');
     }
 
     public function rejectOrganizer(Request $request, $id)
@@ -146,13 +225,14 @@ class AdminController extends Controller
         $profile->update(['status' => 'rejected']);
         $profile->user?->update(['role' => 'attendee']);
 
-        return redirect()->route('admin.organizers')->with('success', 'Organizer application rejected.');
+        return redirect()
+            ->route('admin.organizers.all', ['status' => 'pending'])
+            ->with('success', 'Organizer application rejected.');
     }
 
     public function approveEvents()
     {
-        $events = Event::with('organizer')->where('status', 'pending_review')->get();
-        return view('admin.events', compact('events'));
+        return redirect()->route('admin.events.all', ['status' => 'pending_review']);
     }
 
     public function showEvent(Event $event)
@@ -167,7 +247,7 @@ class AdminController extends Controller
 
         return redirect()
             ->route('admin.events.show', $event->slug)
-            ->with('success', 'Event disimpan sebagai draft dan dapat ditinjau kembali nanti.');
+            ->with('success', 'Event saved as draft and can be reviewed again later.');
     }
 
     public function approveEvent(Request $request, Event $event)
@@ -195,6 +275,6 @@ class AdminController extends Controller
 
         return redirect()
             ->route('admin.events.all')
-            ->with('success', "Event \"{$title}\" berhasil dihapus.");
+            ->with('success', "Event \"{$title}\" has been deleted.");
     }
 }

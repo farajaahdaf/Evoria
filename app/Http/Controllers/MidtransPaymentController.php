@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\GenerateETicketsJob;
 use App\Models\Order;
 use App\Services\MidtransService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 class MidtransPaymentController extends Controller
 {
@@ -56,7 +56,7 @@ class MidtransPaymentController extends Controller
             }
 
             if ($mappedStatus === 'paid' && $previousStatus !== 'paid') {
-                $this->generateETickets($order);
+                GenerateETicketsJob::dispatch($order->id)->afterCommit();
                 $this->creditOrganizerBalance($order);
             }
         });
@@ -87,22 +87,6 @@ class MidtransPaymentController extends Controller
             $item->eTickets()->update([
                 'status' => 'cancelled',
             ]);
-        }
-    }
-
-    protected function generateETickets(Order $order): void
-    {
-        $order->loadMissing('orderItems.eTickets');
-
-        foreach ($order->orderItems as $item) {
-            $existingCount = $item->eTickets->count();
-            $missingCount = max($item->quantity - $existingCount, 0);
-
-            for ($i = 0; $i < $missingCount; $i++) {
-                $item->eTickets()->create([
-                    'ticket_code' => 'TCKT-' . Str::upper(Str::random(12)),
-                ]);
-            }
         }
     }
 
