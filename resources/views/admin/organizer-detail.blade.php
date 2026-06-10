@@ -3,6 +3,11 @@
         $portfolioReview = $organizer->latestPortfolioReview;
         $reviewBreakdown = $portfolioReview?->breakdown ?? [];
         $reviewFindings = $portfolioReview?->findings ?? [];
+        $portfolioMissing = ! $organizer->portfolio_path || ! Storage::disk('public')->exists($organizer->portfolio_path);
+
+        if (! $portfolioReview && $portfolioMissing) {
+            $reviewFindings = ['Portfolio file is missing.'];
+        }
     @endphp
 
     <div class="min-h-screen bg-[#ebebeb] py-8 px-4 sm:px-6 lg:px-8">
@@ -96,7 +101,13 @@
                                 <div>
                                     <h4 class="font-bold text-slate-800">Portfolio Verification Score</h4>
                                     <p class="text-sm text-slate-500">
-                                        {{ $portfolioReview ? ($portfolioReview->risk_level . ' • Template v' . $portfolioReview->template_version) : 'No automated portfolio analysis yet.' }}
+                                        @if($portfolioReview)
+                                            {{ $portfolioReview->risk_level . ' • Template v' . $portfolioReview->template_version }}
+                                        @elseif($portfolioMissing)
+                                            Incomplete • Portfolio file is missing
+                                        @else
+                                            No automated portfolio analysis yet.
+                                        @endif
                                     </p>
                                 </div>
                                 </div>
@@ -138,6 +149,15 @@
                                         @endif
                                     </div>
                                 @endif
+                            @elseif(count($reviewFindings) > 0)
+                                <div class="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-5">
+                                    <h5 class="text-xs font-black uppercase tracking-widest text-amber-700">Verification Findings</h5>
+                                    <ul class="mt-3 space-y-2 text-sm font-semibold text-amber-800">
+                                        @foreach($reviewFindings as $finding)
+                                            <li>{{ $finding }}</li>
+                                        @endforeach
+                                    </ul>
+                                </div>
                             @endif
                         </div>
                     </div>

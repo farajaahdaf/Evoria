@@ -41,6 +41,10 @@ class OrganizerProfile extends Model
             return $review->score;
         }
 
+        if (! $this->portfolio_path) {
+            return 0;
+        }
+
         $score = 30; // Base score for basic info (company name, etc)
         
         if ($this->description) $score += 10;
@@ -51,6 +55,10 @@ class OrganizerProfile extends Model
 
     public function getComplianceAccuracyAttribute()
     {
+        if (! $this->portfolio_path && ! $this->latestPortfolioReview) {
+            return 0;
+        }
+
         return $this->latestPortfolioReview ? 100 : 98.2;
     }
 }

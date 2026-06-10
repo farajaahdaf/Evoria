@@ -63,9 +63,7 @@ class OrganizerApplicationController extends Controller
             return $profile;
         });
 
-        if ($portfolioPath) {
-            app(PortfolioVerificationService::class)->analyze($profile->load('user'));
-        }
+        app(PortfolioVerificationService::class)->analyze($profile->load('user'));
 
         return redirect()
             ->route('organizer.pending')
