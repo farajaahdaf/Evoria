@@ -26,6 +26,9 @@ Route::prefix('v1')->group(function () {
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('/auth/logout', [AuthController::class, 'logout']);
         Route::get('/profile', [AuthController::class, 'profile']);
+        Route::post('/profile', [AuthController::class, 'updateProfile']);
+        Route::put('/profile/password', [AuthController::class, 'updatePassword']);
+        Route::delete('/profile', [AuthController::class, 'destroyAccount']);
 
         // Booking
         Route::post('/events/{eventId}/book', [BookingController::class, 'book']);
