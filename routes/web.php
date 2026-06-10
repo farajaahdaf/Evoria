@@ -5,7 +5,6 @@ use Illuminate\Support\Facades\Redis;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\OrganizerController;
-use App\Http\Controllers\OrganizerApplicationController;
 use App\Http\Controllers\Organizer\EventController;
 use Illuminate\Support\Facades\Route;
 
@@ -237,10 +236,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     })->name('dashboard');
 
     Route::get('/organizer/pending', [OrganizerController::class, 'pending'])->name('organizer.pending');
-    Route::get('/organizer/apply', [OrganizerApplicationController::class, 'create'])->name('organizer.application.create');
-    Route::post('/organizer/apply', [OrganizerApplicationController::class, 'store'])
-        ->middleware('role:attendee')
-        ->name('organizer.application.store');
 
     Route::middleware('role:attendee')->prefix('attendee')->name('attendee.')->group(function () {
         Route::get('/dashboard', [\App\Http\Controllers\AttendeeController::class, 'dashboard'])->name('dashboard');
