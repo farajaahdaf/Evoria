@@ -1,5 +1,18 @@
 <x-guest-layout>
-    <div class="space-y-8" x-data="{ step: 1 }">
+    <div
+        class="space-y-8"
+        x-data="{
+            step: 1,
+            goToPortfolioStep() {
+                if (! this.$refs.organizerForm.reportValidity()) {
+                    return;
+                }
+
+                this.step = 2;
+                this.$nextTick(() => document.getElementById('portfolio')?.focus());
+            }
+        }"
+    >
         <div class="space-y-3">
             <p class="text-sm font-semibold text-primary">Daftar Event Organizer</p>
             <div class="space-y-2">
@@ -26,7 +39,14 @@
             </div>
         </div>
 
-        <form method="POST" action="{{ route('register.organizer.store') }}" class="space-y-5" enctype="multipart/form-data">
+        <form
+            x-ref="organizerForm"
+            method="POST"
+            action="{{ route('register.organizer.store') }}"
+            class="space-y-5"
+            enctype="multipart/form-data"
+            @submit="if (step === 1) { $event.preventDefault(); goToPortfolioStep(); }"
+        >
             @csrf
 
             <!-- Step 1: Account Information -->
@@ -67,7 +87,7 @@
                 </div>
                 <x-input-error :messages="$errors->get('password')" class="mt-1" />
 
-                <button type="button" @click="step = 2" class="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-5 py-4 text-sm font-extrabold text-white shadow-[0_14px_34px_rgba(37,99,235,0.28)] transition hover:-translate-y-0.5 hover:bg-primary/90">
+                <button type="button" @click="goToPortfolioStep()" class="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-5 py-4 text-sm font-extrabold text-white shadow-[0_14px_34px_rgba(37,99,235,0.28)] transition hover:-translate-y-0.5 hover:bg-primary/90">
                     Lanjutkan
                     <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
                 </button>
