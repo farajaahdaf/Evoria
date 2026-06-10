@@ -96,9 +96,7 @@ class RegisteredUserController extends Controller
                 'status' => 'pending',
             ]);
 
-            if ($portfolioPath) {
-                app(PortfolioVerificationService::class)->analyze($profile->load('user'));
-            }
+            app(PortfolioVerificationService::class)->analyze($profile->load('user'));
 
             return $user;
         });
