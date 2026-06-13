@@ -59,23 +59,74 @@ class ChatbotController extends Controller
 
         [$events, $fallbackEvents, $totalMatches] = $this->findEvents($filters, $userLat, $userLng);
 
-        try {
-            $reply = $this->generateAiEventAnswer($prompt, $filters, $events, $fallbackEvents, $totalMatches, $apiKey);
-            $this->logChat($request, $prompt, $reply);
+        // Jawaban pencarian event dibangun deterministik di PHP (tanpa panggilan
+        // OpenAI ke-2) → jauh lebih cepat & tidak mungkin timeout di langkah ini.
+        // Data event + jarak sudah lengkap, dan mobile menampilkan kartu event
+        // yang bisa di-tap di bawah teks ini.
+        $displayEvents = $events->isNotEmpty() ? $events : $fallbackEvents;
+        $reply = $this->buildEventSearchReply($filters, $events, $fallbackEvents, $totalMatches);
+        $this->logChat($request, $prompt, $reply);
 
-            // Kirim event cards ke mobile agar bisa di-tap langsung
-            $displayEvents = $events->isNotEmpty() ? $events : $fallbackEvents;
+        return response()->json([
+            'response' => $reply,
+            'events'   => $this->buildEventCards($displayEvents),
+        ]);
+    }
 
-            return response()->json([
-                'response' => $reply,
-                'events'   => $this->buildEventCards($displayEvents),
-            ]);
-        } catch (\Throwable) {
-            return response()->json([
-                'response' => 'Maaf, layanan AI sedang bermasalah. Coba lagi sebentar lagi.',
-                'events'   => [],
-            ], 503);
+    /**
+     * Susun jawaban pencarian event tanpa LLM: daftar rapi + jarak (jika ada).
+     */
+    private function buildEventSearchReply(array $filters, Collection $events, Collection $fallbackEvents, int $totalMatches): string
+    {
+        $nearby = (bool) ($filters['nearby'] ?? false);
+
+        if ($events->isNotEmpty()) {
+            $intro = $nearby
+                ? "Berikut {$events->count()} event terdekat dari lokasimu (total {$totalMatches} ditemukan):"
+                : "Ditemukan {$totalMatches} event yang cocok. Berikut daftarnya:";
+
+            return $intro . "\n\n" . $this->formatEventLines($events, $nearby);
         }
+
+        if ($fallbackEvents->isNotEmpty()) {
+            return "Tidak ada event yang persis cocok. Mungkin ini menarik buat kamu:\n\n"
+                . $this->formatEventLines($fallbackEvents, false);
+        }
+
+        return 'Maaf, belum ada event yang cocok. Coba ubah kota, kategori, bulan, tanggal, atau budget ya.';
+    }
+
+    private function formatEventLines(Collection $events, bool $withDistance): string
+    {
+        $rows = $this->buildEventsPayload($events);
+
+        $lines = [];
+        foreach ($rows as $i => $event) {
+            $meta = [];
+            if (! empty($event['date'])) {
+                $meta[] = $event['date'];
+            }
+            if (! empty($event['location_name'])) {
+                $meta[] = $event['location_name'];
+            }
+            if ($withDistance && isset($event['distance_km']) && $event['distance_km'] !== null) {
+                $meta[] = "{$event['distance_km']} km dari lokasimu";
+            }
+
+            $price = $event['lowest_price'];
+            $meta[] = $price === null
+                ? 'Harga -'
+                : ((float) $price === 0.0 ? 'Gratis' : 'Mulai Rp ' . number_format((float) $price, 0, ',', '.'));
+
+            if (($event['available_ticket_count'] ?? 0) > 0) {
+                $meta[] = "{$event['available_ticket_count']} tiket tersedia";
+            }
+
+            $number = $i + 1;
+            $lines[] = "{$number}. [{$event['link_text']}]({$event['url']})\n   " . implode(' · ', $meta);
+        }
+
+        return implode("\n\n", $lines);
     }
 
     private function extractAiFilters(string $prompt, string $apiKey): array
@@ -277,58 +328,6 @@ User prompt: {$prompt}";
                 }
             });
         }
-    }
-
-    private function generateAiEventAnswer(
-        string $prompt,
-        array $filters,
-        Collection $events,
-        Collection $fallbackEvents,
-        int $totalMatches,
-        string $apiKey
-    ): string {
-        $systemPrompt = "You are Evoria AI Assistant, a helpful customer service assistant for an event marketplace.
-Answer in Indonesian. Use ONLY the database event data below. Do not invent events, prices, dates, links, or availability.
-
-If exact_matches has items:
-- Say how many matching events were found in total.
-- List up to 8 events unless the user asks for all/list, then list up to 12.
-- For every event, include a clickable Markdown link using exactly this format: [link_text](url).
-- Use link_text from the event data for the link label, not title, because some event titles contain square brackets.
-- After the link, you may mention the full title as plain text if needed.
-- Include date, city/location, lowest price, and available ticket count.
-If exact_matches is empty and fallback_events has items, explain that exact matches are unavailable and offer fallback events.
-If both are empty, apologize and suggest changing city, category, month, date, or budget.
-
-If an event has a distance_km value, the list is already sorted from nearest to farthest from the user's current location. Start with the closest, and for each event mention the distance naturally, e.g. '3.2 km dari lokasimu'. If distance_km is null, do not invent a distance.
-
-Keep the answer concise. Never cut off links.
-
-Parsed filters: " . json_encode($filters) . "
-total_matches: {$totalMatches}
-exact_matches: " . json_encode($this->buildEventsPayload($events)) . "
-fallback_events: " . json_encode($this->buildEventsPayload($fallbackEvents));
-
-        $finalResponse = Http::withToken($apiKey)->post('https://api.openai.com/v1/chat/completions', [
-            'model' => config('services.openai.chatbot_response_model', 'gpt-4o-mini'),
-            'messages' => [
-                ['role' => 'system', 'content' => $systemPrompt],
-                ['role' => 'user', 'content' => $prompt],
-            ],
-            'max_tokens' => 900,
-            'temperature' => 0.25,
-        ]);
-
-        if (! $finalResponse->successful()) {
-            throw new \RuntimeException('Gagal membuat jawaban AI.');
-        }
-
-        $reply = $finalResponse->json()['choices'][0]['message']['content'] ?? null;
-        if (! is_string($reply) || trim($reply) === '') {
-            throw new \RuntimeException('OpenAI response is empty.');
-        }
-
-        return $reply;
     }
 
     private function answerGeneralQuestion(Request $request, string $prompt, string $apiKey, array $aiFilters = [], array $filters = [])
