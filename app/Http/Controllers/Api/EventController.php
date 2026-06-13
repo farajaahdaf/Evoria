@@ -11,6 +11,11 @@ class EventController extends Controller
 {
     public function index(Request $request)
     {
+        $request->validate([
+            'lat' => 'nullable|numeric|between:-90,90',
+            'lng' => 'nullable|numeric|between:-180,180',
+        ]);
+
         $query = Event::with('category', 'organizer', 'tickets')->where('status', 'published');
 
         if ($request->filled('category_id')) {
@@ -56,7 +61,31 @@ class EventController extends Controller
             }
         }
 
-        $events = $query->latest()->paginate(10);
+        // Sortir "terdekat": hitung jarak (Haversine) di DB atas SEMUA event yang
+        // cocok, lalu urutkan dari paling dekat. Konsisten dengan chatbot.
+        $lat = $request->filled('lat') ? (float) $request->lat : null;
+        $lng = $request->filled('lng') ? (float) $request->lng : null;
+        $nearest = filter_var($request->input('sort_nearest', false), FILTER_VALIDATE_BOOLEAN)
+            && $lat !== null && $lng !== null;
+
+        if ($nearest) {
+            $haversine = '6371 * acos(LEAST(1.0, '
+                . 'cos(radians(?)) * cos(radians(latitude)) * cos(radians(longitude) - radians(?)) '
+                . '+ sin(radians(?)) * sin(radians(latitude))))';
+
+            $events = $query
+                ->whereNotNull('latitude')
+                ->whereNotNull('longitude')
+                // Hanya event mendatang — selaras dengan chatbot, agar "terdekat"
+                // tidak menampilkan event yang sudah lewat.
+                ->where('start_time', '>=', now()->startOfDay())
+                ->select('events.*')
+                ->selectRaw("ROUND($haversine, 1) as distance_km", [$lat, $lng, $lat])
+                ->orderBy('distance_km')
+                ->paginate(10);
+        } else {
+            $events = $query->latest()->paginate(10);
+        }
 
         return response()->json([
             'status' => 'success',
