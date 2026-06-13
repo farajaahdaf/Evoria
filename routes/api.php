@@ -22,6 +22,10 @@ Route::prefix('v1')->group(function () {
     Route::get('/events', [EventController::class, 'index']);
     Route::get('/events/{id}', [EventController::class, 'show']);
 
+    // Chatbot AI — publik agar guest (belum login) tetap bisa eksplor event lewat AI.
+    // User login tetap teridentifikasi via Bearer token (lihat logChat → user('sanctum')).
+    Route::post('/chatbot', [ChatbotApiController::class, 'chat']);
+
     // Protected Routes
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('/auth/logout', [AuthController::class, 'logout']);
@@ -38,8 +42,5 @@ Route::prefix('v1')->group(function () {
         Route::get('/orders/{order}', [OrderController::class, 'show']);
         Route::post('/orders/{order}/sync', [OrderController::class, 'syncStatus']);
         Route::post('/orders/{order}/cancel', [OrderController::class, 'cancelOrder']);
-
-        // Chatbot AI
-        Route::post('/chatbot', [ChatbotApiController::class, 'chat']);
     });
 });

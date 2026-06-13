@@ -13,9 +13,15 @@ class ChatbotController extends Controller
 {
     public function chat(Request $request)
     {
-        $request->validate(['prompt' => 'required|string|max:1000']);
+        $request->validate([
+            'prompt' => 'required|string|max:1000',
+            'lat'    => 'nullable|numeric|between:-90,90',
+            'lng'    => 'nullable|numeric|between:-180,180',
+        ]);
 
         $prompt = trim($request->prompt);
+        $userLat = $request->filled('lat') ? (float) $request->lat : null;
+        $userLng = $request->filled('lng') ? (float) $request->lng : null;
         $apiKey = config('services.openai.api_key');
 
         if (empty($apiKey)) {
@@ -51,12 +57,10 @@ class ChatbotController extends Controller
             return $this->answerGeneralQuestion($request, $prompt, $apiKey, $aiFilters, $filters);
         }
 
-        [$events, $fallbackEvents, $totalMatches] = $this->findEvents($filters);
+        [$events, $fallbackEvents, $totalMatches] = $this->findEvents($filters, $userLat, $userLng);
 
         try {
             $reply = $this->generateAiEventAnswer($prompt, $filters, $events, $fallbackEvents, $totalMatches, $apiKey);
-            $this->logChat($request, $prompt, $reply);
-
             $this->logChat($request, $prompt, $reply);
 
             // Kirim event cards ke mobile agar bisa di-tap langsung
@@ -95,22 +99,26 @@ JSON schema:
   \"month\": \"1-12 if a month is mentioned; null if none\",
   \"year\": \"year if mentioned or implied by month; null if none\",
   \"category\": \"category name or synonym such as konser, workshop, olahraga, seni, teknologi, festival; null if none\",
-  \"list_all\": \"true if user asks to list/show all events or events in a city/category without a narrow keyword\"
+  \"list_all\": \"true if user asks to list/show all events or events in a city/category without a narrow keyword\",
+  \"nearby\": \"true if the user asks for events near them / closest / by distance, for example 'event terdekat', 'paling dekat', 'di sekitar saya', 'dekat lokasi saya', 'nearest', 'near me'; false otherwise\"
 }
 
 Rules:
 - 'list semua event', 'daftar event', 'event apa saja', and 'event di Jakarta/Pontianak' are event_search with list_all=true.
 - If user asks 'yang ada' or 'semua event', use date_scope=all and available_only=false.
 - If user asks 'yang akan datang', 'upcoming', or 'tersedia', use date_scope=upcoming.
+- Set nearby=true ONLY when the user clearly wants results based on proximity to their own location (terdekat, sekitar saya, dekat sini, nearest, near me). Do not set city when nearby=true unless the user also names a city.
 - Do not use the word 'event' itself as keyword.
 
 Examples:
 Input: list semua event yang ada
-Output: {\"intent\":\"event_search\",\"keyword\":null,\"city\":null,\"max_price\":null,\"min_price\":null,\"free_only\":false,\"available_only\":false,\"date_scope\":\"all\",\"month\":null,\"year\":null,\"category\":null,\"list_all\":true}
+Output: {\"intent\":\"event_search\",\"keyword\":null,\"city\":null,\"max_price\":null,\"min_price\":null,\"free_only\":false,\"available_only\":false,\"date_scope\":\"all\",\"month\":null,\"year\":null,\"category\":null,\"list_all\":true,\"nearby\":false}
 Input: list event yang ada di Pontianak
-Output: {\"intent\":\"event_search\",\"keyword\":null,\"city\":\"Pontianak\",\"max_price\":null,\"min_price\":null,\"free_only\":false,\"available_only\":false,\"date_scope\":\"all\",\"month\":null,\"year\":null,\"category\":null,\"list_all\":true}
+Output: {\"intent\":\"event_search\",\"keyword\":null,\"city\":\"Pontianak\",\"max_price\":null,\"min_price\":null,\"free_only\":false,\"available_only\":false,\"date_scope\":\"all\",\"month\":null,\"year\":null,\"category\":null,\"list_all\":true,\"nearby\":false}
 Input: cari konser gratis di jakarta bulan september
-Output: {\"intent\":\"event_search\",\"keyword\":null,\"city\":\"Jakarta\",\"max_price\":0,\"min_price\":null,\"free_only\":true,\"available_only\":true,\"date_scope\":\"upcoming\",\"month\":9,\"year\":" . now()->year . ",\"category\":\"konser\",\"list_all\":false}
+Output: {\"intent\":\"event_search\",\"keyword\":null,\"city\":\"Jakarta\",\"max_price\":0,\"min_price\":null,\"free_only\":true,\"available_only\":true,\"date_scope\":\"upcoming\",\"month\":9,\"year\":" . now()->year . ",\"category\":\"konser\",\"list_all\":false,\"nearby\":false}
+Input: event apa yang paling dekat dari lokasi saya sekarang?
+Output: {\"intent\":\"event_search\",\"keyword\":null,\"city\":null,\"max_price\":null,\"min_price\":null,\"free_only\":false,\"available_only\":true,\"date_scope\":\"upcoming\",\"month\":null,\"year\":null,\"category\":null,\"list_all\":false,\"nearby\":true}
 
 User prompt: {$prompt}";
 
@@ -130,13 +138,44 @@ User prompt: {$prompt}";
         return json_decode(trim($jsonString), true) ?: [];
     }
 
-    private function findEvents(array $filters): array
+    private function findEvents(array $filters, ?float $userLat = null, ?float $userLng = null): array
     {
         $limit = ($filters['list_all'] ?? false) ? 12 : 8;
         $query = Event::with(['category', 'tickets'])
             ->where('status', 'published');
 
         $this->applyEventFilters($query, $filters);
+
+        // Mode "terdekat": butuh koordinat user. Ambil kandidat yang punya lat/lng,
+        // hitung jarak (Haversine), lalu urutkan dari yang paling dekat.
+        $wantsNearby = ($filters['nearby'] ?? false) && $userLat !== null && $userLng !== null;
+        if ($wantsNearby) {
+            $candidates = (clone $query)
+                ->whereNotNull('latitude')
+                ->whereNotNull('longitude')
+                ->get();
+
+            $totalMatches = $candidates->count();
+
+            $events = $candidates
+                ->map(function ($event) use ($userLat, $userLng) {
+                    $event->distance_km = round(
+                        $this->haversineKm($userLat, $userLng, (float) $event->latitude, (float) $event->longitude),
+                        1
+                    );
+                    return $event;
+                })
+                ->sortBy('distance_km')
+                ->take($limit)
+                ->values();
+
+            // Fallback: kalau tidak ada event berkoordinat, tawarkan event terdekat secara waktu.
+            $fallbackEvents = $events->isEmpty()
+                ? (clone $query)->orderBy('start_time')->take(5)->get()
+                : collect();
+
+            return [$events, $fallbackEvents, $totalMatches];
+        }
 
         $totalMatches = (clone $query)->count();
         $events = $query
@@ -261,6 +300,8 @@ If exact_matches has items:
 If exact_matches is empty and fallback_events has items, explain that exact matches are unavailable and offer fallback events.
 If both are empty, apologize and suggest changing city, category, month, date, or budget.
 
+If an event has a distance_km value, the list is already sorted from nearest to farthest from the user's current location. Start with the closest, and for each event mention the distance naturally, e.g. '3.2 km dari lokasimu'. If distance_km is null, do not invent a distance.
+
 Keep the answer concise. Never cut off links.
 
 Parsed filters: " . json_encode($filters) . "
@@ -337,8 +378,12 @@ fallback_events: " . json_encode($this->buildEventsPayload($fallbackEvents));
 
     private function logChat(Request $request, string $prompt, string $reply): void
     {
+        // Route /chatbot kini publik (guest boleh pakai). Kalau ada Bearer token yang
+        // valid, tetap identifikasi user lewat guard sanctum agar log ter-atribusi.
+        $user = $request->user('sanctum') ?? $request->user();
+
         ChatbotLog::create([
-            'user_id' => $request->user() ? $request->user()->id : null,
+            'user_id' => $user?->id,
             'prompt' => $prompt,
             'response' => $reply,
         ]);
@@ -359,9 +404,10 @@ fallback_events: " . json_encode($this->buildEventsPayload($fallbackEvents));
             'year' => null,
             'category' => null,
             'list_all' => false,
+            'nearby' => false,
         ], array_filter($aiFilters, fn ($value) => $value !== null && $value !== ''));
 
-        foreach (['free_only', 'available_only', 'list_all'] as $booleanKey) {
+        foreach (['free_only', 'available_only', 'list_all', 'nearby'] as $booleanKey) {
             if (isset($filters[$booleanKey])) {
                 $filters[$booleanKey] = filter_var($filters[$booleanKey], FILTER_VALIDATE_BOOLEAN);
             }
@@ -395,6 +441,8 @@ fallback_events: " . json_encode($this->buildEventsPayload($fallbackEvents));
             $ticketsForPrice = $availableTickets->isNotEmpty() ? $availableTickets : $event->tickets->sortBy('price')->values();
             $lowestTicket = $ticketsForPrice->first();
 
+            $distance = $event->getAttributes()['distance_km'] ?? null;
+
             return [
                 'title' => $event->title,
                 'link_text' => $this->makeSafeMarkdownLinkText($event->title),
@@ -404,6 +452,7 @@ fallback_events: " . json_encode($this->buildEventsPayload($fallbackEvents));
                 'date' => optional($event->start_time)->translatedFormat('d M Y H:i'),
                 'location_name' => $event->location_name,
                 'address' => $event->address,
+                'distance_km' => $distance !== null ? (float) $distance : null,
                 'lowest_price' => $lowestTicket ? (float) $lowestTicket->price : null,
                 'available_ticket_count' => (int) $availableTickets->sum('available_qty'),
                 'tickets' => $ticketsForPrice->take(3)->map(fn ($ticket) => [
@@ -429,11 +478,14 @@ fallback_events: " . json_encode($this->buildEventsPayload($fallbackEvents));
                     : \Illuminate\Support\Facades\Storage::url(ltrim(preg_replace('#^/?storage/#', '', $event->banner_path), '/'));
             }
 
+            $distance = $event->getAttributes()['distance_km'] ?? null;
+
             return [
                 'id'           => $event->id,
                 'title'        => $event->title,
                 'date'         => optional($event->start_time)->translatedFormat('d M Y, H:i'),
                 'location'     => $event->location_name,
+                'distance_km'  => $distance !== null ? (float) $distance : null,
                 'lowest_price' => $lowestTicket ? (float) $lowestTicket->price : null,
                 'banner_url'   => $bannerUrl,
                 'category'     => $event->category?->name,
@@ -467,6 +519,22 @@ fallback_events: " . json_encode($this->buildEventsPayload($fallbackEvents));
             || filled($filters['min_price'] ?? null)
             || ($filters['free_only'] ?? false)
             || ($filters['available_only'] ?? false);
+    }
+
+    /**
+     * Jarak dua titik koordinat (km) memakai formula Haversine.
+     */
+    private function haversineKm(float $lat1, float $lng1, float $lat2, float $lng2): float
+    {
+        $earthRadius = 6371; // km
+
+        $dLat = deg2rad($lat2 - $lat1);
+        $dLng = deg2rad($lng2 - $lng1);
+
+        $a = sin($dLat / 2) ** 2
+            + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * sin($dLng / 2) ** 2;
+
+        return $earthRadius * 2 * asin(min(1.0, sqrt($a)));
     }
 
 }
