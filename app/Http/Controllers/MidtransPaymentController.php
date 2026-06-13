@@ -56,7 +56,11 @@ class MidtransPaymentController extends Controller
             }
 
             if ($mappedStatus === 'paid' && $previousStatus !== 'paid') {
-                GenerateETicketsJob::dispatch($order->id)->afterCommit();
+                // Synchronous: e-ticket harus sudah ada saat syncOrder() mengembalikan
+                // order ke mobile, kalau tidak QR code belum ke-generate di response
+                // pertama. Job idempotent (missing = quantity - existing), aman dijalankan
+                // ulang oleh webhook Midtrans.
+                GenerateETicketsJob::dispatchSync($order->id);
                 $this->creditOrganizerBalance($order);
             }
         });
