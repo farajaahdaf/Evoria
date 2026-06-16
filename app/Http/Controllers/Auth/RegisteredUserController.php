@@ -72,7 +72,12 @@ class RegisteredUserController extends Controller
             'description' => ['nullable', 'string', 'max:2000'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
-            'portfolio' => ['nullable', 'file', 'mimes:docx,pdf,jpeg,png,jpg', 'max:5120'],
+            'portfolio' => ['required', 'file', 'mimes:docx,pdf', 'max:5120'],
+        ], [
+            'portfolio.required' => 'Portfolio wajib diunggah sebelum mendaftar sebagai EO.',
+            'portfolio.file' => 'Portfolio harus berupa file DOCX atau PDF.',
+            'portfolio.mimes' => 'Portfolio hanya boleh berupa file DOCX atau PDF.',
+            'portfolio.max' => 'Ukuran portfolio maksimal 5MB.',
         ]);
 
         $portfolioPath = null;

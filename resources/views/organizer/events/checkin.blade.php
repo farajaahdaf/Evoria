@@ -6,7 +6,7 @@
     </x-slot>
 
     <div class="py-12" x-data="checkinScanner('{{ route('organizer.events.checkin.scan', $event->id) }}', @js($initialScanHistory))">
-        <div class="max-w-3xl mx-auto sm:px-6 lg:px-8">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             
             <div class="mb-4">
                 <a href="{{ route('organizer.events.index') }}" class="text-indigo-600 hover:text-indigo-900 font-medium flex items-center gap-1">
@@ -15,8 +15,10 @@
                 </a>
             </div>
 
+            <div class="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_430px] lg:items-start">
+                <div class="space-y-6">
             <!-- Camera Scanner Card -->
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden mb-6" x-data="{ cameraOpen: false }">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden" x-data="{ cameraOpen: false }">
                 <div class="p-6 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
                     <h3 class="text-xl font-bold text-slate-900">QR Scanner</h3>
                     <button type="button" 
@@ -33,6 +35,16 @@
                     <div class="relative w-full max-w-sm mx-auto overflow-hidden rounded-xl bg-black aspect-video flex items-center justify-center">
                         <video id="camera-preview" class="w-full h-full object-cover" autoplay playsinline></video>
                         <canvas id="camera-canvas" style="display:none"></canvas>
+                        <div class="pointer-events-none absolute inset-0 flex items-center justify-center">
+                            <div class="absolute inset-0 bg-slate-950/10"></div>
+                            <svg id="qr-detection-overlay" class="absolute inset-0 h-full w-full opacity-0 transition-opacity duration-100" preserveAspectRatio="none">
+                                <polygon id="qr-detection-polygon" points="" fill="rgba(37,99,235,0.14)" stroke="#60a5fa" stroke-width="4" stroke-linejoin="round"></polygon>
+                                <polygon id="qr-detection-polygon-inner" points="" fill="none" stroke="#ffffff" stroke-width="1.5" stroke-linejoin="round"></polygon>
+                            </svg>
+                            <div class="absolute bottom-3 rounded-full bg-slate-950/70 px-3 py-1 text-[11px] font-bold text-white">
+                                Arahkan kamera ke QR, border akan mengikuti kode
+                            </div>
+                        </div>
                         <div x-show="loading" x-transition.opacity class="absolute inset-0 flex items-center justify-center bg-slate-950/50 text-white text-sm font-bold" style="display: none;">
                             Verifying...
                         </div>
@@ -66,13 +78,31 @@
                             <span x-text="loading ? 'Verifying...' : 'Scan / Check Ticket'"></span>
                         </button>
                     </form>
+                </div>
+            </div>
+                </div>
+
+                <aside class="space-y-6 lg:sticky lg:top-24">
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                        <div class="border-b border-slate-100 bg-slate-50 px-5 py-4">
+                            <h3 class="text-lg font-black text-slate-900">Live Gate Monitor</h3>
+                            <p class="text-sm text-slate-500">Latest result and scan status stay visible here.</p>
+                        </div>
+                        <div class="p-5">
+                    <div x-show="!message" class="rounded-2xl border border-blue-100 bg-blue-50 p-5 text-center">
+                        <div class="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 text-blue-600">
+                            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.75 4.75h6.5v6.5h-6.5zM13.75 4.75h6.5v6.5h-6.5zM3.75 14.75h6.5v6.5h-6.5zM14.75 14.75h2.5m-2.5 3h5.5m-2.5-5.5v8.5"></path></svg>
+                        </div>
+                        <h4 class="text-lg font-black text-blue-800">Ready to Scan</h4>
+                        <p class="mt-1 text-sm font-semibold text-blue-600">Arahkan kamera ke tiket berikutnya.</p>
+                    </div>
 
                     <!-- Result Area -->
-                    <div x-show="message" x-transition.opacity class="mt-8" style="display: none;">
+                    <div x-show="message" x-transition.opacity style="display: none;">
                         <!-- Success -->
-                        <div x-show="statusType === 'checked_in'" style="display: none;" class="p-6 bg-green-50 rounded-2xl border border-green-100 flex flex-col items-center text-center">
-                            <div class="w-16 h-16 bg-green-100 text-green-600 flex items-center justify-center rounded-full mb-4">
-                                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        <div x-show="statusType === 'checked_in'" style="display: none;" class="p-5 bg-green-50 rounded-2xl border border-green-100 flex flex-col items-center text-center">
+                            <div class="w-12 h-12 bg-green-100 text-green-600 flex items-center justify-center rounded-full mb-3">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
                             </div>
                             <h4 class="text-xl font-bold text-green-800 mb-1">Check-in Successful!</h4>
                             <div class="bg-white px-6 py-4 rounded-xl border border-green-100 w-full mt-4 text-left">
@@ -88,9 +118,9 @@
                         </div>
 
                         <!-- Already Used -->
-                        <div x-show="statusType === 'already_used'" style="display: none;" class="p-6 bg-amber-50 rounded-2xl border border-amber-100 flex flex-col items-center text-center">
-                            <div class="w-16 h-16 bg-amber-100 text-amber-600 flex items-center justify-center rounded-full mb-4">
-                                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M12 3a9 9 0 110 18 9 9 0 010-18z"></path></svg>
+                        <div x-show="statusType === 'already_used'" style="display: none;" class="p-5 bg-amber-50 rounded-2xl border border-amber-100 flex flex-col items-center text-center">
+                            <div class="w-12 h-12 bg-amber-100 text-amber-600 flex items-center justify-center rounded-full mb-3">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M12 3a9 9 0 110 18 9 9 0 010-18z"></path></svg>
                             </div>
                             <h4 class="text-xl font-bold text-amber-800 mb-2">Already Checked In</h4>
                             <p class="text-amber-700" x-text="message"></p>
@@ -107,9 +137,9 @@
                         </div>
 
                         <!-- Error -->
-                        <div x-show="statusType === 'failed'" style="display: none;" class="p-6 bg-red-50 rounded-2xl border border-red-100 flex flex-col items-center text-center">
-                            <div class="w-16 h-16 bg-red-100 text-red-600 flex items-center justify-center rounded-full mb-4">
-                                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        <div x-show="statusType === 'failed'" style="display: none;" class="p-5 bg-red-50 rounded-2xl border border-red-100 flex flex-col items-center text-center">
+                            <div class="w-12 h-12 bg-red-100 text-red-600 flex items-center justify-center rounded-full mb-3">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                             </div>
                             <h4 class="text-xl font-bold text-red-800 mb-2">Check-in Failed</h4>
                             <p class="text-red-600" x-text="message"></p>
@@ -117,20 +147,12 @@
                     </div>
 
                     <!-- Scan History -->
-                    <div class="mt-8 border-t border-slate-100 pt-6">
+                    <div class="mt-5 border-t border-slate-100 pt-5">
                         <div class="flex items-center justify-between gap-4 mb-4">
                             <div>
                                 <h4 class="text-lg font-black text-slate-900">Scan History</h4>
                                 <p class="text-sm text-slate-500">Latest scan results for this session.</p>
                             </div>
-                            <button
-                                type="button"
-                                x-show="scanHistory.length > 0"
-                                @click="scanHistory = []"
-                                class="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600 transition hover:bg-slate-200"
-                            >
-                                Clear
-                            </button>
                         </div>
 
                         <div class="mb-4 grid grid-cols-3 gap-3" x-show="scanHistory.length > 0" style="display: none;">
@@ -152,7 +174,7 @@
                             No tickets scanned yet.
                         </div>
 
-                        <div x-show="scanHistory.length > 0" class="space-y-3" style="display: none;">
+                        <div x-show="scanHistory.length > 0" class="max-h-[420px] space-y-3 overflow-y-auto pr-1" style="display: none;">
                             <template x-for="item in scanHistory" :key="item.id">
                                 <div
                                     class="flex items-start gap-4 rounded-2xl border bg-white p-4"
@@ -200,6 +222,8 @@
                         </div>
                     </div>
                 </div>
+            </div>
+                </aside>
             </div>
             
         </div>
@@ -275,7 +299,7 @@
                         this.addScanHistory(scannedCode);
                     } finally {
                         this.loading = false;
-                        this.resumeAt = Date.now() + 1400;
+                        this.resumeAt = Date.now() + 450;
                         this.$nextTick(() => { this.$refs.ticketInput.focus(); });
                     }
                 },
@@ -302,7 +326,7 @@
                         })
                     });
 
-                    this.scanHistory = this.scanHistory.slice(0, 8);
+                    this.scanHistory = this.scanHistory.slice(0, 20);
                 },
 
                 historyCount(type) {
@@ -314,7 +338,7 @@
                     const now = Date.now();
 
                     if (!normalizedCode || this.loading || now < this.resumeAt) return;
-                    if (normalizedCode === this.lastScannedCode && now - this.lastScannedAt < 3000) return;
+                    if (normalizedCode === this.lastScannedCode && now - this.lastScannedAt < 1800) return;
 
                     this.lastScannedCode = normalizedCode;
                     this.lastScannedAt = now;
@@ -360,6 +384,9 @@
     <script>
         let cameraStream = null;
         let scanInterval = null;
+        let qrOutlineTimeout = null;
+        const SCAN_INTERVAL_MS = 45;
+        const SCAN_MAX_CANVAS_SIZE = 560;
 
         async function startCamera() {
             const video = document.getElementById('camera-preview');
@@ -372,12 +399,22 @@
             }
 
             try {
-                cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                cameraStream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        facingMode: 'environment',
+                        width: { ideal: 960 },
+                        height: { ideal: 720 }
+                    }
+                });
                 video.srcObject = cameraStream;
                 errorEl.classList.add('hidden');
                 
                 video.onloadeddata = () => {
-                    scanInterval = setInterval(scanFrame, 300);
+                    if (scanInterval) {
+                        clearInterval(scanInterval);
+                    }
+
+                    scanInterval = setInterval(scanFrame, SCAN_INTERVAL_MS);
                 };
             } catch (err) {
                 console.error("Error accessing camera:", err);
@@ -391,6 +428,7 @@
                 clearInterval(scanInterval);
                 scanInterval = null;
             }
+            hideQrDetectionOutline();
             if (cameraStream) {
                 cameraStream.getTracks().forEach(track => track.stop());
                 cameraStream = null;
@@ -400,21 +438,100 @@
         function scanFrame() {
             const video = document.getElementById('camera-preview');
             const canvas = document.getElementById('camera-canvas');
+            const scannerData = getCheckinScannerData();
             
             if (!video || video.readyState !== video.HAVE_ENOUGH_DATA) return;
+            if (scannerData && (scannerData.loading || Date.now() < scannerData.resumeAt)) return;
 
-            canvas.height = video.videoHeight;
-            canvas.width = video.videoWidth;
+            const scale = Math.min(1, SCAN_MAX_CANVAS_SIZE / Math.max(video.videoWidth, video.videoHeight));
+            const scanWidth = Math.floor(video.videoWidth * scale);
+            const scanHeight = Math.floor(video.videoHeight * scale);
+
+            canvas.height = scanHeight;
+            canvas.width = scanWidth;
             const ctx = canvas.getContext('2d');
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            ctx.drawImage(video, 0, 0, video.videoWidth, video.videoHeight, 0, 0, scanWidth, scanHeight);
             const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
             const code = jsQR(imageData.data, imageData.width, imageData.height, {
-                inversionAttempts: "dontInvert",
+                inversionAttempts: "attemptBoth",
             });
 
             if (code) {
+                showQrDetectionOutline(video, code.location, {
+                    sourceX: 0,
+                    sourceY: 0,
+                    sourceWidth: video.videoWidth,
+                    sourceHeight: video.videoHeight,
+                    scanWidth,
+                    scanHeight,
+                });
                 processQRResult(code.data);
+            } else {
+                scheduleQrDetectionOutlineHide();
+            }
+        }
+
+        function showQrDetectionOutline(video, location, scanArea) {
+            const overlay = document.getElementById('qr-detection-overlay');
+            const polygon = document.getElementById('qr-detection-polygon');
+            const innerPolygon = document.getElementById('qr-detection-polygon-inner');
+
+            if (!overlay || !polygon || !innerPolygon || !location) return;
+
+            const points = [
+                location.topLeftCorner,
+                location.topRightCorner,
+                location.bottomRightCorner,
+                location.bottomLeftCorner,
+            ].map((point) => mapCanvasPointToVideoElement(video, point, scanArea));
+
+            const pointString = points.map((point) => `${point.x},${point.y}`).join(' ');
+            polygon.setAttribute('points', pointString);
+            innerPolygon.setAttribute('points', pointString);
+            overlay.classList.remove('opacity-0');
+            overlay.classList.add('opacity-100');
+
+            if (qrOutlineTimeout) {
+                clearTimeout(qrOutlineTimeout);
+                qrOutlineTimeout = null;
+            }
+        }
+
+        function mapCanvasPointToVideoElement(video, point, scanArea) {
+            const sourceX = scanArea.sourceX + (point.x / scanArea.scanWidth) * scanArea.sourceWidth;
+            const sourceY = scanArea.sourceY + (point.y / scanArea.scanHeight) * scanArea.sourceHeight;
+            const videoScale = Math.max(video.clientWidth / video.videoWidth, video.clientHeight / video.videoHeight);
+            const renderedWidth = video.videoWidth * videoScale;
+            const renderedHeight = video.videoHeight * videoScale;
+            const offsetX = (video.clientWidth - renderedWidth) / 2;
+            const offsetY = (video.clientHeight - renderedHeight) / 2;
+
+            return {
+                x: Math.round(offsetX + sourceX * videoScale),
+                y: Math.round(offsetY + sourceY * videoScale),
+            };
+        }
+
+        function scheduleQrDetectionOutlineHide() {
+            if (qrOutlineTimeout) return;
+
+            qrOutlineTimeout = setTimeout(() => {
+                hideQrDetectionOutline();
+            }, 220);
+        }
+
+        function hideQrDetectionOutline() {
+            const overlay = document.getElementById('qr-detection-overlay');
+
+            if (qrOutlineTimeout) {
+                clearTimeout(qrOutlineTimeout);
+                qrOutlineTimeout = null;
+            }
+
+            if (overlay) {
+                overlay.classList.remove('opacity-100');
+                overlay.classList.add('opacity-0');
             }
         }
 
@@ -422,18 +539,21 @@ function processQRResult(resultText) {
     console.log("QR Code detected:", resultText);
 
     const ticketInput = document.getElementById('ticket_code');
-    const scannerEl = document.querySelector('[x-data*="checkinScanner"]');
+    const alpineData = getCheckinScannerData();
     
-    if (ticketInput && scannerEl && window.Alpine) {
-        const alpineData = window.Alpine.$data(scannerEl);
-        if (alpineData) {
-            alpineData.handleDetectedCode(resultText);
-        }
+    if (ticketInput && alpineData) {
+        alpineData.handleDetectedCode(resultText);
     }
 
     const qrUpload = document.getElementById('qr-upload');
     if (qrUpload) qrUpload.value = '';
 }
+
+        function getCheckinScannerData() {
+            const scannerEl = document.querySelector('[x-data*="checkinScanner"]');
+
+            return scannerEl && window.Alpine ? window.Alpine.$data(scannerEl) : null;
+        }
 
         document.addEventListener('DOMContentLoaded', () => {
             const qrUpload = document.getElementById('qr-upload');
@@ -454,7 +574,7 @@ function processQRResult(resultText) {
                             const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
                             
                             const code = jsQR(imageData.data, imageData.width, imageData.height, {
-                                inversionAttempts: "dontInvert",
+                                inversionAttempts: "attemptBoth",
                             });
                             
                             if (code) {

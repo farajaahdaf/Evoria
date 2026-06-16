@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Organizer;
 
 use App\Http\Controllers\Controller;
+use App\Models\ETicket;
 use App\Models\Event;
 use App\Models\EventCategory;
+use App\Models\TicketScanLog;
 use App\Services\GoogleMapsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -227,14 +229,29 @@ class EventController extends Controller
             abort(403);
         }
 
-        $initialScanHistory = \App\Models\ETicket::with(['orderItem.ticket', 'orderItem.order.user'])
+        $scanLogs = TicketScanLog::with(['eTicket.orderItem.ticket', 'eTicket.orderItem.order.user'])
+            ->where('event_id', $event->id)
+            ->latest('scanned_at')
+            ->limit(20)
+            ->get();
+
+        $loggedTicketIds = $scanLogs
+            ->pluck('e_ticket_id')
+            ->filter()
+            ->unique()
+            ->values();
+
+        $loggedHistory = $scanLogs->map(fn (TicketScanLog $scanLog) => $this->formatScanLogHistoryItem($scanLog));
+
+        $legacyCheckedInHistory = ETicket::with(['orderItem.ticket', 'orderItem.order.user'])
             ->where('status', 'used')
             ->whereNotNull('used_at')
+            ->when($loggedTicketIds->isNotEmpty(), fn ($query) => $query->whereNotIn('id', $loggedTicketIds))
             ->whereHas('orderItem.ticket', function ($query) use ($event) {
                 $query->where('event_id', $event->id);
             })
             ->latest('used_at')
-            ->limit(8)
+            ->limit(20)
             ->get()
             ->map(function ($eTicket) {
                 return [
@@ -246,7 +263,18 @@ class EventController extends Controller
                     'code' => $eTicket->ticket_code,
                     'message' => 'Previously checked in',
                     'time' => $eTicket->used_at->format('H:i:s'),
+                    'sort_time' => $eTicket->used_at->timestamp,
                 ];
+            });
+
+        $initialScanHistory = $loggedHistory
+            ->concat($legacyCheckedInHistory)
+            ->sortByDesc('sort_time')
+            ->take(20)
+            ->map(function (array $item) {
+                unset($item['sort_time']);
+
+                return $item;
             })
             ->values();
 
@@ -263,11 +291,15 @@ class EventController extends Controller
             'ticket_code' => 'required|string'
         ]);
 
-        $eTicket = \App\Models\ETicket::with(['orderItem.ticket.event', 'orderItem.order.user'])
-            ->where('ticket_code', $request->ticket_code)
+        $ticketCode = $request->string('ticket_code')->trim()->toString();
+
+        $eTicket = ETicket::with(['orderItem.ticket.event', 'orderItem.order.user'])
+            ->where('ticket_code', $ticketCode)
             ->first();
 
         if (!$eTicket) {
+            $this->recordScanAttempt($event, null, $ticketCode, 'failed', 'Ticket code not found');
+
             return response()->json([
                 'success' => false,
                 'status_type' => 'failed',
@@ -276,6 +308,8 @@ class EventController extends Controller
         }
 
         if ($eTicket->orderItem->ticket->event_id !== $event->id) {
+            $this->recordScanAttempt($event, null, $ticketCode, 'failed', 'This ticket is for a different event');
+
             return response()->json([
                 'success' => false,
                 'status_type' => 'failed',
@@ -285,11 +319,20 @@ class EventController extends Controller
 
         if ($eTicket->status !== 'active') {
             $isAlreadyUsed = $eTicket->status === 'used';
+            $message = $isAlreadyUsed ? 'Ticket already checked in' : 'Ticket is ' . $eTicket->status;
+
+            $this->recordScanAttempt(
+                $event,
+                $eTicket,
+                $ticketCode,
+                $isAlreadyUsed ? 'already_used' : 'failed',
+                $message
+            );
 
             return response()->json([
                 'success' => false,
                 'status_type' => $isAlreadyUsed ? 'already_used' : 'failed',
-                'message' => $isAlreadyUsed ? 'Ticket already checked in' : 'Ticket is ' . $eTicket->status,
+                'message' => $message,
                 'buyer_name' => $eTicket->orderItem->order->user->name,
                 'ticket_name' => $eTicket->orderItem->ticket->name,
                 'checkin_time' => $eTicket->used_at ? $eTicket->used_at->format('d M Y H:i:s') : null,
@@ -298,6 +341,8 @@ class EventController extends Controller
 
         // Validate if order is paid (just in case)
         if ($eTicket->orderItem->order->status !== 'paid') {
+            $this->recordScanAttempt($event, $eTicket, $ticketCode, 'failed', 'Order for this ticket is not fully paid.');
+
             return response()->json([
                 'success' => false,
                 'status_type' => 'failed',
@@ -310,6 +355,8 @@ class EventController extends Controller
             'used_at' => now()
         ]);
 
+        $this->recordScanAttempt($event, $eTicket, $ticketCode, 'checked_in', 'Success');
+
         return response()->json([
             'success' => true,
             'status_type' => 'checked_in',
@@ -317,5 +364,39 @@ class EventController extends Controller
             'ticket_name' => $eTicket->orderItem->ticket->name,
             'checkin_time' => $eTicket->used_at->format('d M Y H:i:s')
         ]);
+    }
+
+    private function recordScanAttempt(Event $event, ?ETicket $eTicket, string $ticketCode, string $statusType, string $message): TicketScanLog
+    {
+        return TicketScanLog::create([
+            'event_id' => $event->id,
+            'organizer_id' => auth()->id(),
+            'e_ticket_id' => $eTicket?->id,
+            'ticket_code' => $ticketCode,
+            'status_type' => $statusType,
+            'message' => $message,
+            'scanned_at' => now(),
+        ]);
+    }
+
+    private function formatScanLogHistoryItem(TicketScanLog $scanLog): array
+    {
+        $labels = [
+            'checked_in' => 'Checked In',
+            'already_used' => 'Already Used',
+            'failed' => 'Failed',
+        ];
+
+        return [
+            'id' => 'scan-log-' . $scanLog->id,
+            'type' => $scanLog->status_type,
+            'label' => $labels[$scanLog->status_type] ?? 'Scan Result',
+            'name' => $scanLog->eTicket?->orderItem?->order?->user?->name ?? 'Unknown attendee',
+            'ticket' => $scanLog->eTicket?->orderItem?->ticket?->name ?? 'No ticket detail',
+            'code' => $scanLog->ticket_code,
+            'message' => $scanLog->message,
+            'time' => $scanLog->scanned_at->format('H:i:s'),
+            'sort_time' => $scanLog->scanned_at->timestamp,
+        ];
     }
 }
