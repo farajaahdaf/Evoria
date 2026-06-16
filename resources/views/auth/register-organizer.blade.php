@@ -2,14 +2,90 @@
     <div
         class="space-y-8"
         x-data="{
-            step: 1,
+            step: {{ $errors->has('portfolio') ? 2 : 1 }},
+            portfolioError: @js($errors->first('portfolio')),
+            findInvalidAccountField() {
+                return Array.from(this.$refs.accountStep.querySelectorAll('input, textarea, select'))
+                    .find((field) => ! field.checkValidity());
+            },
             goToPortfolioStep() {
-                if (! this.$refs.organizerForm.reportValidity()) {
+                const invalidField = this.findInvalidAccountField();
+
+                if (invalidField) {
+                    invalidField.reportValidity();
                     return;
                 }
 
                 this.step = 2;
                 this.$nextTick(() => document.getElementById('portfolio')?.focus());
+            },
+            handleSubmit(event) {
+                if (this.step === 1) {
+                    event.preventDefault();
+                    this.goToPortfolioStep();
+                    return;
+                }
+
+                if (! this.validatePortfolio(true)) {
+                    event.preventDefault();
+                    return;
+                }
+
+                const invalidField = this.findInvalidAccountField();
+
+                if (invalidField) {
+                    event.preventDefault();
+                    this.step = 1;
+                    this.$nextTick(() => invalidField.reportValidity());
+                }
+            },
+            handlePortfolioChange() {
+                this.validatePortfolio(false);
+            },
+            validatePortfolio(shouldReport = false) {
+                const input = this.$refs.portfolioInput;
+                const file = input?.files?.[0] ?? null;
+
+                if (! input) {
+                    return false;
+                }
+
+                input.setCustomValidity('');
+
+                if (! file) {
+                    this.portfolioError = shouldReport ? 'Portfolio wajib diunggah sebelum mendaftar sebagai EO.' : '';
+
+                    if (shouldReport) {
+                        input.setCustomValidity(this.portfolioError);
+                        input.reportValidity();
+                    }
+
+                    return false;
+                }
+
+                const extension = file.name.split('.').pop().toLowerCase();
+                const isAllowedType = ['docx', 'pdf'].includes(extension);
+                const isAllowedSize = file.size <= 5 * 1024 * 1024;
+
+                if (! isAllowedType) {
+                    this.portfolioError = 'Portfolio hanya boleh berupa file DOCX atau PDF.';
+                    input.value = '';
+                    input.setCustomValidity(this.portfolioError);
+                    input.reportValidity();
+                    return false;
+                }
+
+                if (! isAllowedSize) {
+                    this.portfolioError = 'Ukuran portfolio maksimal 5MB.';
+                    input.value = '';
+                    input.setCustomValidity(this.portfolioError);
+                    input.reportValidity();
+                    return false;
+                }
+
+                this.portfolioError = '';
+                input.setCustomValidity('');
+                return true;
             }
         }"
     >
@@ -45,12 +121,13 @@
             action="{{ route('register.organizer.store') }}"
             class="space-y-5"
             enctype="multipart/form-data"
-            @submit="if (step === 1) { $event.preventDefault(); goToPortfolioStep(); }"
+            novalidate
+            @submit="handleSubmit($event)"
         >
             @csrf
 
             <!-- Step 1: Account Information -->
-            <div x-show="step === 1" class="space-y-5" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 transform translate-x-4" x-transition:enter-end="opacity-100 transform translate-x-0">
+            <div x-ref="accountStep" x-show="step === 1" class="space-y-5" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 transform translate-x-4" x-transition:enter-end="opacity-100 transform translate-x-0">
                 <div class="space-y-2">
                     <label for="name" class="text-sm font-semibold text-slate-700">Nama PIC</label>
                     <input id="name" name="name" type="text" value="{{ old('name') }}" required autofocus autocomplete="name" placeholder="Nama penanggung jawab" class="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100">
@@ -124,8 +201,9 @@
                                 <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                             </div>
                             <label for="portfolio" class="text-sm font-bold text-slate-900">Upload portfolio yang sudah diisi</label>
-                            <p class="mt-1 text-xs text-slate-500">DOCX, PDF, atau gambar. Maks. 5MB.</p>
-                            <input id="portfolio" name="portfolio" type="file" accept=".docx,.pdf,image/*" class="mt-4 block w-full text-xs text-slate-500 file:mr-4 file:rounded-full file:border-0 file:bg-blue-50 file:px-4 file:py-2 file:text-xs file:font-semibold file:text-primary hover:file:bg-blue-100">
+                            <p class="mt-1 text-xs text-slate-500">DOCX atau PDF. Maks. 5MB.</p>
+                            <input id="portfolio" x-ref="portfolioInput" name="portfolio" type="file" accept=".docx,.pdf,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" x-bind:required="step === 2" x-bind:disabled="step !== 2" @change="handlePortfolioChange()" class="mt-4 block w-full text-xs text-slate-500 file:mr-4 file:rounded-full file:border-0 file:bg-blue-50 file:px-4 file:py-2 file:text-xs file:font-semibold file:text-primary hover:file:bg-blue-100">
+                            <p x-show="portfolioError" x-text="portfolioError" class="mt-2 text-sm text-red-600"></p>
                         </div>
                     </div>
                 </div>
