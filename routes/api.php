@@ -42,5 +42,6 @@ Route::prefix('v1')->group(function () {
         Route::get('/orders/{order}', [OrderController::class, 'show']);
         Route::post('/orders/{order}/sync', [OrderController::class, 'syncStatus']);
         Route::post('/orders/{order}/cancel', [OrderController::class, 'cancelOrder']);
+        Route::post('/orders/{order}/resume-payment', [OrderController::class, 'resumePayment']);
     });
 });

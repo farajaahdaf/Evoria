@@ -95,4 +95,43 @@ class OrderController extends Controller
             'message' => 'Order berhasil dibatalkan dan stok tiket dikembalikan.',
         ]);
     }
+
+    /**
+     * Reissue a Midtrans Snap token for a still-pending order so the user
+     * can resume payment (e.g. after closing the Snap sheet without paying,
+     * or coming back later from the order list).
+     */
+    public function resumePayment(Request $request, Order $order, MidtransService $midtrans): JsonResponse
+    {
+        abort_unless($order->user_id === $request->user()->id, 403);
+
+        if ($order->status !== 'pending') {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Hanya order dengan status pending yang bisa dilanjutkan pembayarannya.',
+            ], 422);
+        }
+
+        if (! $midtrans->isConfigured()) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Pembayaran belum dikonfigurasi di server.',
+            ], 422);
+        }
+
+        $snapResponse = $midtrans->createSnapTransaction($order);
+        $order->update(['snap_token' => $snapResponse['token'] ?? null]);
+
+        $pendingMinutes = (int) config('booking.pending_timeout_minutes', 1440);
+
+        return response()->json([
+            'status'                  => 'success',
+            'order_id'                => $order->id,
+            'order_number'            => $order->order_number,
+            'snap_token'              => $order->snap_token,
+            'is_free'                 => false,
+            'payment_expires_at'      => now()->addMinutes($pendingMinutes)->toIso8601String(),
+            'payment_timeout_minutes' => $pendingMinutes,
+        ]);
+    }
 }
